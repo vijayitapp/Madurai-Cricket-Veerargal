@@ -1,0 +1,296 @@
+import React from 'react';
+import { Match, Player, PlayerStats } from '../types';
+import { Trophy, Zap, TrendingUp, Calendar, Users, Shield, Sparkles, Play, ArrowRight, Star, Award, MapPin, Clock } from 'lucide-react';
+
+interface HomeDashboardProps {
+  matches: Match[];
+  playerStats: PlayerStats[];
+  players: Player[];
+  isAdminMode: boolean;
+  onStartMatch: () => void;
+  onNavigateToTab: (tab: string) => void;
+}
+
+export default function HomeDashboard({
+  matches,
+  playerStats,
+  players,
+  isAdminMode,
+  onStartMatch,
+  onNavigateToTab
+}: HomeDashboardProps) {
+
+  // Retrieve top 3 completed matches
+  const completedMatches = matches
+    .filter(m => m.status === 'completed' || m.status === 'aborted')
+    .slice(0, 3);
+
+  // Retrieve top 3 batters
+  const topBatters = [...playerStats]
+    .filter(s => s.batting.innings > 0)
+    .sort((a, b) => b.batting.runs - a.batting.runs)
+    .slice(0, 3);
+
+  // Retrieve top 3 bowlers
+  const topBowlers = [...playerStats]
+    .filter(s => s.bowling.innings > 0)
+    .sort((a, b) => b.bowling.wickets - a.bowling.wickets)
+    .slice(0, 3);
+
+  const getPlayerName = (id: string) => {
+    return players.find(p => p.id === id)?.name || 'Unknown';
+  };
+
+  const getMedalEmoji = (idx: number) => {
+    if (idx === 0) return '🥇';
+    if (idx === 1) return '🥈';
+    if (idx === 2) return '🥉';
+    return `#${idx + 1}`;
+  };
+
+  return (
+    <div className="space-y-6">
+      
+      {/* App Branding & Logo Hero Card */}
+      <div className="relative bg-sleek-panel border border-sleek-border rounded-3xl p-6 md:p-8 overflow-hidden shadow-2xl">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-sleek-accent/5 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-emerald-500/5 rounded-full blur-2xl pointer-events-none"></div>
+        
+        <div className="relative flex flex-col md:flex-row items-center gap-6 justify-between">
+          <div className="flex items-center gap-4 text-center md:text-left flex-col md:flex-row">
+            <div className="w-16 h-16 bg-sleek-accent rounded-2xl flex items-center justify-center shadow-lg shadow-sleek-accent/20 animate-pulse">
+              <span className="text-3xl text-black">🏏</span>
+            </div>
+            <div className="space-y-1">
+              <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight italic text-white flex items-center justify-center md:justify-start gap-2">
+                MADURAI VEERAGAL
+              </h2>
+              <p className="text-xs text-white/60 uppercase tracking-widest font-mono">
+                Cricket League & Match Analytics Portal
+              </p>
+            </div>
+          </div>
+          
+          <div className="flex flex-col items-center md:items-end gap-1 font-mono text-[10px] uppercase text-white/40 border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 w-full md:w-auto">
+            <span>Powered by Real Firestore DB</span>
+            <span>Refreshes Automatically in Real-time</span>
+          </div>
+        </div>
+      </div>
+
+      {/* No Match Currently Live Status & Admin Setup Action */}
+      <div className="bg-sleek-card border border-sleek-border p-6 rounded-3xl relative overflow-hidden shadow-xl">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-start gap-4">
+            <div className="w-12 h-12 rounded-2xl bg-white/5 flex items-center justify-center text-white/50 shrink-0 relative">
+              <span className="absolute top-1.5 right-1.5 flex h-3.5 w-3.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-red-500"></span>
+              </span>
+              <Clock size={20} />
+            </div>
+            <div className="space-y-1">
+              <span className="text-[10px] bg-red-500/10 text-red-400 border border-red-500/15 px-2 py-0.5 rounded font-black uppercase tracking-wider inline-block">
+                No Active Live Match
+              </span>
+              <h3 className="font-extrabold text-white text-base">Stadium is Currently Quiet</h3>
+              <p className="text-xs text-white/50 max-w-lg leading-relaxed">
+                There are no matches currently playing or active on the live score tracker. Viewers will directly see the scorecard once the match scorer kicks off the play.
+              </p>
+            </div>
+          </div>
+
+          {isAdminMode ? (
+            <button
+              onClick={onStartMatch}
+              className="w-full md:w-auto px-6 py-3.5 bg-sleek-accent hover:bg-sleek-accent-hover text-black text-xs font-black uppercase tracking-widest rounded-2xl transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-sleek-accent/10"
+            >
+              <Sparkles size={14} fill="currentColor" /> Start New Match Flow
+            </button>
+          ) : (
+            <div className="w-full md:w-auto px-4 py-2.5 bg-white/5 rounded-xl border border-white/5 text-[11px] text-white/40 uppercase tracking-widest font-mono text-center">
+              🔒 Scorer Access Restricted
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Bento Grid: Upcoming Match Information & Recent Match Results */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Upcoming Match Card */}
+        <div className="bg-sleek-card border border-sleek-border rounded-3xl p-6 flex flex-col justify-between gap-6 shadow-lg">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-sleek-accent uppercase tracking-widest flex items-center gap-1.5">
+                <Calendar size={12} /> Next Upcoming Clash
+              </span>
+              <span className="text-[10px] bg-white/5 text-white/50 px-2 py-0.5 rounded font-mono uppercase tracking-wider">
+                Weekend Series
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              <h4 className="text-lg font-black text-white leading-tight uppercase">
+                Ramco Veerargal <span className="text-sleek-accent font-light">vs</span> Hard Workers
+              </h4>
+              <p className="text-xs text-white/50 leading-relaxed">
+                The neighborhood giants will battle it out in a highly anticipated 6-over local tournament final match.
+              </p>
+            </div>
+          </div>
+
+          <div className="space-y-3 border-t border-white/5 pt-4">
+            <div className="flex items-center gap-2 text-xs text-white/70 font-mono">
+              <Clock size={14} className="text-sleek-accent" />
+              <span>Saturday @ 4:00 PM IST (Local Time)</span>
+            </div>
+            <div className="flex items-center gap-2 text-xs text-white/70 font-mono">
+              <MapPin size={14} className="text-sleek-accent" />
+              <span>Madurai Turf Ground, Bypass Arena</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent Match Results */}
+        <div className="bg-sleek-card border border-sleek-border rounded-3xl p-6 flex flex-col justify-between shadow-lg">
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <span className="text-[10px] font-black text-sleek-accent uppercase tracking-widest flex items-center gap-1.5">
+                <Trophy size={12} /> Recent Results
+              </span>
+              <button
+                onClick={() => onNavigateToTab('history')}
+                className="text-[10px] font-black text-white/40 hover:text-white uppercase tracking-wider cursor-pointer flex items-center gap-1 transition"
+              >
+                View History <ArrowRight size={10} />
+              </button>
+            </div>
+
+            <div className="space-y-3.5">
+              {completedMatches.length === 0 ? (
+                <div className="text-center py-8 border border-dashed border-white/5 rounded-2xl text-xs text-white/30 font-mono uppercase tracking-widest">
+                  No match archives recorded
+                </div>
+              ) : (
+                completedMatches.map(match => {
+                  const scoreFirst = match.scores[match.battingFirst || 'teamA'];
+                  const scoreSecond = match.scores[match.battingFirst === 'teamA' ? 'teamB' : 'teamA'];
+                  const firstTeamName = match.battingFirst === 'teamA' ? match.teamA.name : match.teamB.name;
+                  const secondTeamName = match.battingFirst === 'teamA' ? match.teamB.name : match.teamA.name;
+                  const isAborted = match.status === 'aborted';
+
+                  return (
+                    <div key={match.id} className="p-3 bg-white/5 rounded-2xl border border-white/5 flex items-center justify-between text-xs gap-3">
+                      <div className="space-y-1 truncate">
+                        <p className="font-extrabold text-white truncate uppercase tracking-tight flex items-center gap-1.5">
+                          {firstTeamName.split(' ')[0]} <span className="text-[10px] text-white/40 font-normal">vs</span> {secondTeamName.split(' ')[0]}
+                        </p>
+                        <p className="text-[10px] font-mono text-[#A3FF12] font-black">
+                          {isAborted ? (
+                            <span className="text-amber-400">Match Incomplete</span>
+                          ) : (
+                            `Winner: ${match.winner === 'draw' ? 'Draw Match' : match.winner === 'teamA' ? match.teamA.name.split(' ')[0] : match.teamB.name.split(' ')[0]}`
+                          )}
+                        </p>
+                      </div>
+                      <div className="text-right font-mono text-white/50 shrink-0">
+                        <p className="text-xs font-black text-white">{scoreFirst.runs}/{scoreFirst.wickets}</p>
+                        <p className="text-[10px]">{scoreSecond.runs}/{scoreSecond.wickets}</p>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Bento Grid: Leaderboard Previews */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Top Batters Preview */}
+        <div className="bg-sleek-card border border-sleek-border rounded-3xl p-6 shadow-lg space-y-4">
+          <div className="flex justify-between items-center border-b border-white/5 pb-3">
+            <span className="text-xs font-black text-sleek-accent uppercase tracking-widest flex items-center gap-1.5">
+              <Zap size={14} className="text-sleek-accent" /> Top Batters
+            </span>
+            <span className="text-[9px] text-white/40 font-mono uppercase">Runs Summary</span>
+          </div>
+
+          <div className="space-y-3">
+            {topBatters.length === 0 ? (
+              <p className="text-xs text-white/30 font-mono py-4 text-center uppercase tracking-widest">No batting statistics yet</p>
+            ) : (
+              topBatters.map((stat, idx) => (
+                <div key={stat.id} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 font-mono text-center font-bold text-white/30">
+                      {getMedalEmoji(idx)}
+                    </span>
+                    <div>
+                      <p className="font-extrabold text-white">{stat.name}</p>
+                      <p className="text-[10px] text-white/40 font-mono">Inns: {stat.batting.innings} &bull; SR: {stat.batting.strikeRate}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-[#A3FF12] text-sm">{stat.batting.runs}</p>
+                    <p className="text-[9px] text-white/40 font-mono">Avg: {stat.batting.average}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+        {/* Top Bowlers Preview */}
+        <div className="bg-sleek-card border border-sleek-border rounded-3xl p-6 shadow-lg space-y-4">
+          <div className="flex justify-between items-center border-b border-white/5 pb-3">
+            <span className="text-xs font-black text-sleek-accent uppercase tracking-widest flex items-center gap-1.5">
+              <TrendingUp size={14} className="text-sleek-accent" /> Top Bowlers
+            </span>
+            <span className="text-[9px] text-white/40 font-mono uppercase">Wickets Summary</span>
+          </div>
+
+          <div className="space-y-3">
+            {topBowlers.length === 0 ? (
+              <p className="text-xs text-white/30 font-mono py-4 text-center uppercase tracking-widest">No bowling statistics yet</p>
+            ) : (
+              topBowlers.map((stat, idx) => (
+                <div key={stat.id} className="flex items-center justify-between text-xs">
+                  <div className="flex items-center gap-2.5">
+                    <span className="w-6 font-mono text-center font-bold text-white/30">
+                      {getMedalEmoji(idx)}
+                    </span>
+                    <div>
+                      <p className="font-extrabold text-white">{stat.name}</p>
+                      <p className="text-[10px] text-white/40 font-mono">Inns: {stat.bowling.innings} &bull; Econ: {stat.bowling.economy}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-black text-[#A3FF12] text-sm">{stat.bowling.wickets}</p>
+                    <p className="text-[9px] text-white/40 font-mono">Avg: {stat.bowling.average}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+
+      </div>
+
+      {/* Button to navigate to full leaderboard tab */}
+      <div className="flex justify-center pt-2">
+        <button
+          onClick={() => onNavigateToTab('leaderboard')}
+          className="w-full sm:w-auto flex items-center justify-center gap-2 bg-[#14181F] border border-white/5 hover:bg-white/10 text-[#A3FF12] text-xs font-black uppercase tracking-widest py-3.5 px-6 rounded-2xl transition cursor-pointer shadow-md"
+        >
+          <Award size={14} /> View All Player Stats & Leaderboards
+        </button>
+      </div>
+
+    </div>
+  );
+}

@@ -1,0 +1,76 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    // Match validation helper
+    function isValidMatch(data) {
+      return data.id is string 
+        && data.status is string
+        && data.overs is number
+        && data.createdAt is string;
+    }
+
+    // Player validation helper
+    function isValidPlayer(data) {
+      return data.id is string
+        && data.name is string
+        && data.name.size() > 0
+        && data.name.size() <= 100
+        && data.attendance is number
+        && data.available is bool;
+    }
+
+    // PlayerStats validation helper
+    function isValidPlayerStats(data) {
+      return data.id is string
+        && data.name is string
+        && data.matchesPlayed is number;
+    }
+
+    // Collection: players
+    match /players/{playerId} {
+      allow read: if true;
+      allow create, update: if isValidId(playerId) 
+        && isValidPlayer(incoming());
+      allow delete: if true;
+    }
+
+    // Collection: player_stats
+    match /player_stats/{playerId} {
+      allow read: if true;
+      allow create, update: if isValidId(playerId)
+        && isValidPlayerStats(incoming());
+      allow delete: if true;
+    }
+
+    // Collection: matches
+    match /matches/{matchId} {
+      allow read: if true;
+      allow create, update: if isValidId(matchId)
+        && isValidMatch(incoming());
+      allow delete: if true;
+    }
+  }
+}

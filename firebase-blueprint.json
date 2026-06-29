@@ -1,0 +1,123 @@
+{
+  "entities": {
+    "Player": {
+      "title": "Player",
+      "description": "Represents a local cricket player and their profile information.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Unique player ID." },
+        "name": { "type": "string", "description": "Full name of the player." },
+        "mobile": { "type": "string", "description": "Optional mobile number." },
+        "avatar": { "type": "string", "description": "Profile picture URL or avatar placeholder key." },
+        "available": { "type": "boolean", "description": "Current availability for upcoming matches." },
+        "attendance": { "type": "integer", "description": "Number of matches attended." },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "name", "available", "attendance", "createdAt", "updatedAt"]
+    },
+    "PlayerStats": {
+      "title": "PlayerStats",
+      "description": "Consolidated batting, bowling, and fielding career statistics for a player.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Player ID." },
+        "name": { "type": "string", "description": "Player Name." },
+        "matchesPlayed": { "type": "integer" },
+        "batting": {
+          "type": "object",
+          "properties": {
+            "innings": { "type": "integer" },
+            "runs": { "type": "integer" },
+            "highestScore": { "type": "integer" },
+            "average": { "type": "number" },
+            "strikeRate": { "type": "number" },
+            "thirtyPlus": { "type": "integer" },
+            "fiftyPlus": { "type": "integer" },
+            "ballsFaced": { "type": "integer" },
+            "dismissals": { "type": "integer" }
+          }
+        },
+        "bowling": {
+          "type": "object",
+          "properties": {
+            "innings": { "type": "integer" },
+            "wickets": { "type": "integer" },
+            "runsConceded": { "type": "integer" },
+            "oversBowled": { "type": "number" },
+            "economy": { "type": "number" },
+            "average": { "type": "number" },
+            "bestWickets": { "type": "integer" },
+            "bestRuns": { "type": "integer" }
+          }
+        },
+        "fielding": {
+          "type": "object",
+          "properties": {
+            "catches": { "type": "integer" },
+            "runOuts": { "type": "integer" },
+            "stumpings": { "type": "integer" }
+          }
+        },
+        "awards": {
+          "type": "object",
+          "properties": {
+            "potm": { "type": "integer" },
+            "bestBatter": { "type": "integer" },
+            "bestBowler": { "type": "integer" },
+            "mvp": { "type": "integer" },
+            "mvpPoints": { "type": "number" }
+          }
+        }
+      }
+    },
+    "Match": {
+      "title": "Match",
+      "description": "Represents a cricket match, including setups, teams, real-time score state, and results.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "status": { "type": "string", "enum": ["setup", "toss", "scoring", "completed", "aborted"] },
+        "overs": { "type": "integer" },
+        "tossWinner": { "type": "string" },
+        "tossDecision": { "type": "string", "enum": ["bat", "bowl"] },
+        "teamA": { "type": "object" },
+        "teamB": { "type": "object" },
+        "doubleSidedPlayerId": { "type": "string" },
+        "captainA": { "type": "string" },
+        "captainB": { "type": "string" },
+        "battingFirst": { "type": "string", "enum": ["teamA", "teamB"] },
+        "scores": { "type": "object" },
+        "currentInnings": { "type": "integer", "enum": [1, 2] },
+        "currentBatter1Id": { "type": "string" },
+        "currentBatter2Id": { "type": "string" },
+        "currentBowlerId": { "type": "string" },
+        "oversCompleted": { "type": "integer" },
+        "ballsInOver": { "type": "integer" },
+        "target": { "type": "integer" },
+        "winner": { "type": "string" },
+        "playerOfTheMatch": { "type": "string" },
+        "bestBatter": { "type": "string" },
+        "bestBowler": { "type": "string" },
+        "mvp": { "type": "string" },
+        "timeline": { "type": "array" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  },
+  "firestore": {
+    "/players/{playerId}": {
+      "schema": "Player",
+      "description": "Collection of local players registered in the Madurai Cricket Veeragal community."
+    },
+    "/player_stats/{playerId}": {
+      "schema": "PlayerStats",
+      "description": "Career statistics aggregated across all completed matches for each player."
+    },
+    "/matches/{matchId}": {
+      "schema": "Match",
+      "description": "Match records with real-time score updates, lineups, overs, timeline, and awards."
+    }
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Madurai Cricket Veeragal",
+  "description": "Mobile-first cricket scoring, team builder, and player statistics for local communities in Madurai.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
