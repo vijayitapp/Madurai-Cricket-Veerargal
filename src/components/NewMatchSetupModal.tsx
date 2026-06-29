@@ -47,6 +47,11 @@ export default function NewMatchSetupModal({
   const [tossDecision, setTossDecision] = useState<'bat' | 'bowl' | null>(null);
   const [saving, setSaving] = useState<boolean>(false);
 
+  // Drag and drop hover states
+  const [isDragOverA, setIsDragOverA] = useState<boolean>(false);
+  const [isDragOverB, setIsDragOverB] = useState<boolean>(false);
+  const [isDragOverPool, setIsDragOverPool] = useState<boolean>(false);
+
   // Local copy of players for managing availability on the fly
   const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
 
@@ -61,41 +66,12 @@ export default function NewMatchSetupModal({
       setTeamAName(isRandom ? 'RAMCO VEERARGAL' : 'HARD WORKERS');
       setTeamBName(isRandom ? 'HARD WORKERS' : 'RAMCO VEERARGAL');
 
-      // Initialize team lists from currently available players
-      const available = players.filter(p => p.available);
-      
-      // Auto-partition players to provide a smart default balance
-      const statsMap = new Map<string, number>();
-      playerStats.forEach(s => statsMap.set(s.id, s.awards.mvpPoints || 0));
-      const sorted = [...available].sort((a, b) => (statsMap.get(b.id) || 0) - (statsMap.get(a.id) || 0));
-
-      const listA: string[] = [];
-      const listB: string[] = [];
-      let dsId: string | null = null;
-
-      const isOdd = sorted.length % 2 !== 0;
-      const pool = [...sorted];
-      if (isOdd && pool.length > 0) {
-        const mid = Math.floor(pool.length / 2);
-        const [ds] = pool.splice(mid, 1);
-        dsId = ds.id;
-      }
-
-      pool.forEach((p, idx) => {
-        if (idx % 2 === 0) {
-          listA.push(p.id);
-        } else {
-          listB.push(p.id);
-        }
-      });
-
-      setTeamAPlayers(listA);
-      setTeamBPlayers(listB);
-      setDoubleSidedId(dsId);
-
-      // Default captains
-      if (listA.length > 0) setCaptainA(listA[0]);
-      if (listB.length > 0) setCaptainB(listB[0]);
+      // Teams should not be auto-populated. The scorer will manually draft them!
+      setTeamAPlayers([]);
+      setTeamBPlayers([]);
+      setDoubleSidedId(null);
+      setCaptainA('');
+      setCaptainB('');
     }
   }, [isOpen, players, playerStats]);
 
@@ -676,11 +652,43 @@ export default function NewMatchSetupModal({
                 )}
               </div>
 
-              {/* Three-Column Draft Grid */}
+              {/* Scorer Instructions / Draft Alert */}
+              <div className="bg-[#A3FF12]/5 border border-[#A3FF12]/15 rounded-2xl p-4 flex items-start gap-3 text-xs text-[#A3FF12] font-semibold">
+                <Users size={16} className="shrink-0 text-[#A3FF12] mt-0.5" />
+                <div className="space-y-1">
+                  <span className="font-black block uppercase tracking-wider text-[10px]">Scorer Instructions: Manual Team Drafting</span>
+                  <p className="text-white/70 font-normal leading-relaxed">
+                    Drag and drop player cards between columns to assign them to teams, or click the quick <strong className="text-[#A3FF12] font-extrabold">+ Team A / + Team B</strong> buttons. If a player is not available today, click <strong className="text-rose-400 font-extrabold">Skip</strong> to exclude them from the match rosters.
+                  </p>
+                </div>
+              </div>
+
+              {/* Three-Column Draft Grid with HTML5 Drag & Drop */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                 
                 {/* Column 1: Team A */}
-                <div className="bg-[#14181F] border border-white/5 p-4 rounded-2xl flex flex-col gap-3">
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragOverA(true);
+                  }}
+                  onDragLeave={() => {
+                    setIsDragOverA(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOverA(false);
+                    const id = e.dataTransfer.getData('text/plain');
+                    if (id) {
+                      moveToTeam(id, 'A');
+                    }
+                  }}
+                  className={`bg-[#14181F] border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 ${
+                    isDragOverA
+                      ? 'border-[#A3FF12] bg-[#A3FF12]/5 shadow-lg shadow-[#A3FF12]/10 scale-[1.01]'
+                      : 'border-white/5'
+                  }`}
+                >
                   <div className="border-b border-white/5 pb-2 flex items-center justify-between">
                     <span className="font-black text-[#A3FF12] text-xs uppercase tracking-widest truncate">{teamAName}</span>
                     <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white font-mono text-[10px] rounded">
@@ -706,11 +714,19 @@ export default function NewMatchSetupModal({
                   <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
                     {teamAPlayers.length === 0 ? (
                       <div className="text-center py-8 text-white/20 text-xs uppercase font-extrabold tracking-widest border border-dashed border-white/5 rounded-xl">
-                        Empty Team
+                        Drag players here
                       </div>
                     ) : (
                       teamAPlayers.map(id => (
-                        <div key={id} className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-xl text-xs">
+                        <div
+                          key={id}
+                          draggable={true}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', id);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-xl text-xs hover:border-white/10 cursor-grab active:cursor-grabbing transition"
+                        >
                           <div className="flex items-center gap-2">
                             <img src={getPlayerAvatar(id)} alt="" className="w-5 h-5 rounded-full bg-white/5 border border-white/10" referrerPolicy="no-referrer" />
                             <span className="font-extrabold text-white">
@@ -732,7 +748,28 @@ export default function NewMatchSetupModal({
                 </div>
 
                 {/* Column 2: Pool of Available Players */}
-                <div className="bg-[#14181F] border border-white/5 p-4 rounded-2xl flex flex-col gap-3 lg:col-span-1">
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragOverPool(true);
+                  }}
+                  onDragLeave={() => {
+                    setIsDragOverPool(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOverPool(false);
+                    const id = e.dataTransfer.getData('text/plain');
+                    if (id) {
+                      moveToTeam(id, 'pool');
+                    }
+                  }}
+                  className={`bg-[#14181F] border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 lg:col-span-1 ${
+                    isDragOverPool
+                      ? 'border-white/40 bg-white/5 shadow-lg scale-[1.01]'
+                      : 'border-white/5'
+                  }`}
+                >
                   <div className="border-b border-white/5 pb-2 flex items-center justify-between">
                     <span className="font-black text-white text-xs uppercase tracking-widest">Player Pool</span>
                     <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white font-mono text-[10px] rounded">
@@ -741,37 +778,65 @@ export default function NewMatchSetupModal({
                   </div>
 
                   <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
-                    {localPlayers.map(p => {
-                      const isAssigned = teamAPlayers.includes(p.id) || teamBPlayers.includes(p.id) || doubleSidedId === p.id;
-                      if (isAssigned) return null;
+                    {(() => {
+                      const poolPlayers = localPlayers.filter(p => !teamAPlayers.includes(p.id) && !teamBPlayers.includes(p.id) && p.id !== doubleSidedId);
+                      const sortedPoolPlayers = [...poolPlayers].sort((a, b) => {
+                        if (a.available && !b.available) return -1;
+                        if (!a.available && b.available) return 1;
+                        return 0;
+                      });
 
-                      return (
-                        <div key={p.id} className={`p-2 rounded-xl text-xs border transition ${
-                          p.available 
-                            ? 'bg-white/5 border-white/5' 
-                            : 'bg-red-500/5 border-red-500/10 opacity-50'
-                        }`}>
+                      if (sortedPoolPlayers.length === 0) {
+                        return (
+                          <div className="text-center py-8 text-white/20 text-xs uppercase font-extrabold tracking-widest border border-dashed border-white/5 rounded-xl">
+                            All Assigned
+                          </div>
+                        );
+                      }
+
+                      return sortedPoolPlayers.map(p => (
+                        <div
+                          key={p.id}
+                          draggable={p.available}
+                          onDragStart={(e) => {
+                            if (p.available) {
+                              e.dataTransfer.setData('text/plain', p.id);
+                              e.dataTransfer.effectAllowed = 'move';
+                            }
+                          }}
+                          className={`p-2.5 rounded-xl text-xs border transition ${
+                            p.available 
+                              ? 'bg-white/5 border-white/5 hover:border-white/10 cursor-grab active:cursor-grabbing' 
+                              : 'bg-red-500/5 border-red-500/10 opacity-40'
+                          }`}
+                        >
                           <div className="flex items-center justify-between gap-2">
                             <div className="flex items-center gap-2 min-w-0">
-                              <img src={p.avatar} alt="" className="w-5 h-5 rounded-full bg-white/5 border border-white/10" referrerPolicy="no-referrer" />
-                              <span className="font-extrabold text-white truncate">{p.name}</span>
+                              <img src={p.avatar} alt="" className="w-6 h-6 rounded-full bg-white/5 border border-white/10" referrerPolicy="no-referrer" />
+                              <div className="min-w-0">
+                                <span className="font-extrabold text-white truncate block">{p.name}</span>
+                                {!p.available && (
+                                  <span className="text-[9px] text-red-400 font-bold uppercase tracking-wider block">Skipped / Unavailable</span>
+                                )}
+                              </div>
                             </div>
                             
                             <button
                               type="button"
                               onClick={() => togglePlayerAvailability(p.id)}
-                              className={`px-1.5 py-0.5 text-[9px] font-black uppercase tracking-wider rounded cursor-pointer ${
+                              className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-lg border transition duration-150 cursor-pointer ${
                                 p.available
-                                  ? 'bg-emerald-500/10 text-emerald-400 hover:bg-emerald-500/20'
-                                  : 'bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
+                                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
+                                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
                               }`}
+                              title={p.available ? 'Skip this player' : 'Make player available'}
                             >
-                              {p.available ? 'In' : 'Out'}
+                              {p.available ? 'Skip' : 'Activate'}
                             </button>
                           </div>
 
                           {p.available && (
-                            <div className="grid grid-cols-2 gap-1 mt-2 pt-1 border-t border-white/5">
+                            <div className="grid grid-cols-2 gap-1 mt-2.5 pt-2 border-t border-white/5">
                               <button
                                 type="button"
                                 onClick={() => moveToTeam(p.id, 'A')}
@@ -789,13 +854,34 @@ export default function NewMatchSetupModal({
                             </div>
                           )}
                         </div>
-                      );
-                    })}
+                      ));
+                    })()}
                   </div>
                 </div>
 
                 {/* Column 3: Team B */}
-                <div className="bg-[#14181F] border border-white/5 p-4 rounded-2xl flex flex-col gap-3">
+                <div
+                  onDragOver={(e) => {
+                    e.preventDefault();
+                    setIsDragOverB(true);
+                  }}
+                  onDragLeave={() => {
+                    setIsDragOverB(false);
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault();
+                    setIsDragOverB(false);
+                    const id = e.dataTransfer.getData('text/plain');
+                    if (id) {
+                      moveToTeam(id, 'B');
+                    }
+                  }}
+                  className={`bg-[#14181F] border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 ${
+                    isDragOverB
+                      ? 'border-emerald-400 bg-emerald-400/5 shadow-lg shadow-emerald-400/10 scale-[1.01]'
+                      : 'border-white/5'
+                  }`}
+                >
                   <div className="border-b border-white/5 pb-2 flex items-center justify-between">
                     <span className="font-black text-emerald-400 text-xs uppercase tracking-widest truncate">{teamBName}</span>
                     <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white font-mono text-[10px] rounded">
@@ -821,11 +907,19 @@ export default function NewMatchSetupModal({
                   <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
                     {teamBPlayers.length === 0 ? (
                       <div className="text-center py-8 text-white/20 text-xs uppercase font-extrabold tracking-widest border border-dashed border-white/5 rounded-xl">
-                        Empty Team
+                        Drag players here
                       </div>
                     ) : (
                       teamBPlayers.map(id => (
-                        <div key={id} className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-xl text-xs">
+                        <div
+                          key={id}
+                          draggable={true}
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData('text/plain', id);
+                            e.dataTransfer.effectAllowed = 'move';
+                          }}
+                          className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-xl text-xs hover:border-white/10 cursor-grab active:cursor-grabbing transition"
+                        >
                           <div className="flex items-center gap-2">
                             <img src={getPlayerAvatar(id)} alt="" className="w-5 h-5 rounded-full bg-white/5 border border-white/10" referrerPolicy="no-referrer" />
                             <span className="font-extrabold text-white">

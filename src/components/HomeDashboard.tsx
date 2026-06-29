@@ -41,6 +41,28 @@ export default function HomeDashboard({
     return players.find(p => p.id === id)?.name || 'Unknown';
   };
 
+  const getUpcomingMatchDateTime = () => {
+    const now = new Date();
+    const resultDate = new Date();
+    const dayOfWeek = now.getDay();
+    const daysToAdd = (6 - dayOfWeek + 7) % 7;
+    
+    if (dayOfWeek === 6) {
+      if (now.getHours() >= 16) {
+        resultDate.setDate(now.getDate() + 7);
+      } else {
+        resultDate.setDate(now.getDate());
+      }
+    } else {
+      resultDate.setDate(now.getDate() + daysToAdd);
+    }
+    
+    resultDate.setHours(16, 0, 0, 0);
+    
+    const options: Intl.DateTimeFormatOptions = { weekday: 'long', month: 'long', day: 'numeric' };
+    return `${resultDate.toLocaleDateString('en-US', options)} @ 4:00 PM IST (Local Time)`;
+  };
+
   const getMedalEmoji = (idx: number) => {
     if (idx === 0) return '🥇';
     if (idx === 1) return '🥈';
@@ -63,17 +85,9 @@ export default function HomeDashboard({
             </div>
             <div className="space-y-1">
               <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight italic text-white flex items-center justify-center md:justify-start gap-2">
-                MADURAI VEERAGAL
+                MADURAI CRICKET VEERARGAL
               </h2>
-              <p className="text-xs text-white/60 uppercase tracking-widest font-mono">
-                Cricket League & Match Analytics Portal
-              </p>
             </div>
-          </div>
-          
-          <div className="flex flex-col items-center md:items-end gap-1 font-mono text-[10px] uppercase text-white/40 border-t md:border-t-0 md:border-l border-white/5 pt-4 md:pt-0 md:pl-6 w-full md:w-auto">
-            <span>Powered by Real Firestore DB</span>
-            <span>Refreshes Automatically in Real-time</span>
           </div>
         </div>
       </div>
@@ -94,9 +108,6 @@ export default function HomeDashboard({
                 No Active Live Match
               </span>
               <h3 className="font-extrabold text-white text-base">Stadium is Currently Quiet</h3>
-              <p className="text-xs text-white/50 max-w-lg leading-relaxed">
-                There are no matches currently playing or active on the live score tracker. Viewers will directly see the scorecard once the match scorer kicks off the play.
-              </p>
             </div>
           </div>
 
@@ -105,7 +116,7 @@ export default function HomeDashboard({
               onClick={onStartMatch}
               className="w-full md:w-auto px-6 py-3.5 bg-sleek-accent hover:bg-sleek-accent-hover text-black text-xs font-black uppercase tracking-widest rounded-2xl transition cursor-pointer flex items-center justify-center gap-2 shadow-lg shadow-sleek-accent/10"
             >
-              <Sparkles size={14} fill="currentColor" /> Start New Match Flow
+              <Sparkles size={14} fill="currentColor" /> Start New Match
             </button>
           ) : (
             <div className="w-full md:w-auto px-4 py-2.5 bg-white/5 rounded-xl border border-white/5 text-[11px] text-white/40 uppercase tracking-widest font-mono text-center">
@@ -134,20 +145,17 @@ export default function HomeDashboard({
               <h4 className="text-lg font-black text-white leading-tight uppercase">
                 Ramco Veerargal <span className="text-sleek-accent font-light">vs</span> Hard Workers
               </h4>
-              <p className="text-xs text-white/50 leading-relaxed">
-                The neighborhood giants will battle it out in a highly anticipated 6-over local tournament final match.
-              </p>
             </div>
           </div>
 
           <div className="space-y-3 border-t border-white/5 pt-4">
             <div className="flex items-center gap-2 text-xs text-white/70 font-mono">
               <Clock size={14} className="text-sleek-accent" />
-              <span>Saturday @ 4:00 PM IST (Local Time)</span>
+              <span>{getUpcomingMatchDateTime()}</span>
             </div>
             <div className="flex items-center gap-2 text-xs text-white/70 font-mono">
               <MapPin size={14} className="text-sleek-accent" />
-              <span>Madurai Turf Ground, Bypass Arena</span>
+              <span>Turf, Byepass Road</span>
             </div>
           </div>
         </div>

@@ -15,12 +15,27 @@ import MatchHistory from './components/MatchHistory';
 import Leaderboard from './components/Leaderboard';
 import NewMatchSetupModal from './components/NewMatchSetupModal';
 // Icons
-import { Trophy, Users, Award, Calendar, Activity, Zap, Shield, LogIn, LogOut, Loader2, Sparkles } from 'lucide-react';
+import { Trophy, Users, Award, Calendar, Activity, Zap, Shield, LogIn, LogOut, Loader2, Sparkles, Sun, Moon } from 'lucide-react';
 
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAdminMode, setIsAdminMode] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isLightTheme, setIsLightTheme] = useState<boolean>(() => {
+    return localStorage.getItem('theme') === 'light';
+  });
+
+  // Toggle light class on documentElement
+  useEffect(() => {
+    const root = document.documentElement;
+    if (isLightTheme) {
+      root.classList.add('light');
+      localStorage.setItem('theme', 'light');
+    } else {
+      root.classList.remove('light');
+      localStorage.setItem('theme', 'dark');
+    }
+  }, [isLightTheme]);
 
   // Firestore Data State
   const [players, setPlayers] = useState<Player[]>([]);
@@ -144,13 +159,21 @@ export default function App() {
             <div className="w-4 h-4 bg-[#0A0C10] rotate-45"></div>
           </div>
           <div>
-            <h1 className="font-extrabold text-sm text-white tracking-tight leading-none italic underline decoration-sleek-accent decoration-4 underline-offset-4 uppercase">Madurai Veeragal</h1>
-            <span className="text-[9px] text-white/40 font-bold uppercase tracking-widest mt-1.5 block">Neighborhood League</span>
+            <h1 className="font-extrabold text-sm text-white tracking-tight leading-none italic underline decoration-sleek-accent decoration-4 underline-offset-4 uppercase">MADURAI CRICKET VEERARGAL</h1>
           </div>
         </div>
 
         {/* Auth / Role Switcher */}
         <div className="flex items-center gap-2">
+          {/* Theme Toggle */}
+          <button
+            onClick={() => setIsLightTheme(!isLightTheme)}
+            className="p-1.5 rounded-xl border border-sleek-border bg-sleek-lightcard text-sleek-text hover:text-white transition cursor-pointer flex items-center justify-center"
+            title={isLightTheme ? 'Switch to Dark Mode' : 'Switch to Light Mode'}
+          >
+            {isLightTheme ? <Moon size={14} /> : <Sun size={14} />}
+          </button>
+
           {/* Sandbox toggle */}
           <button
             onClick={handleForceAdminMode}
@@ -240,7 +263,7 @@ export default function App() {
                   onClick={() => setIsSetupModalOpen(true)}
                   className="w-full sm:w-auto px-5 py-2.5 bg-sleek-accent hover:bg-sleek-accent/80 text-black text-xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer flex items-center justify-center gap-1.5 mx-auto"
                 >
-                  <Sparkles size={14} fill="currentColor" /> Start Match Setup Flow
+                  <Sparkles size={14} fill="currentColor" /> Start A New Match
                 </button>
               </div>
             )}
