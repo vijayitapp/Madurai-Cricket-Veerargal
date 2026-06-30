@@ -1,26 +1,40 @@
 @import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap');
 @import "tailwindcss";
 
+/* Cyber Stumps (Dark Theme) */
 :root {
-  --sleek-bg: #0A0C10;
-  --sleek-panel: #0F1218;
-  --sleek-card: #14181F;
-  --sleek-lightcard: #1A1E26;
-  --sleek-border: rgba(255, 255, 255, 0.1);
-  --sleek-accent: #A3FF12;
-  --sleek-accent-hover: #92E610;
-  --sleek-text: #E0E0E0;
+  color-scheme: dark;
+  --sleek-bg: #0B132B;
+  --sleek-panel: #1C2541;
+  --sleek-card: #253255;
+  --sleek-lightcard: #2F3E68;
+  --sleek-border: rgba(0, 229, 255, 0.15);
+  --sleek-accent: #00E5FF;
+  --sleek-accent-hover: #00B8D4;
+  --sleek-text: #F0F4F8;
+  --sleek-text-muted: #8B9EBE;
+  --sleek-overlay: rgba(255, 255, 255, 0.05);
+  --sleek-overlay-hover: rgba(255, 255, 255, 0.1);
+  --sleek-shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  --sleek-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.75);
 }
 
+/* Sunset Drive (Light Theme) */
 :root.light {
-  --sleek-bg: #F3F4F6;
+  color-scheme: light;
+  --sleek-bg: #FFF9F2;
   --sleek-panel: #FFFFFF;
   --sleek-card: #FFFFFF;
-  --sleek-lightcard: #E5E7EB;
+  --sleek-lightcard: #F3E8DC;
   --sleek-border: rgba(0, 0, 0, 0.08);
-  --sleek-accent: #16A34A; /* Grass Cricket Green */
-  --sleek-accent-hover: #15803D;
-  --sleek-text: #1F2937;
+  --sleek-accent: #FF6B00;
+  --sleek-accent-hover: #E11D48;
+  --sleek-text: #1A202C;
+  --sleek-text-muted: #718096;
+  --sleek-overlay: rgba(0, 0, 0, 0.04);
+  --sleek-overlay-hover: rgba(0, 0, 0, 0.07);
+  --sleek-shadow-xl: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02);
+  --sleek-shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.06);
 }
 
 @theme {
@@ -32,6 +46,11 @@
   --color-sleek-accent: var(--sleek-accent);
   --color-sleek-accent-hover: var(--sleek-accent-hover);
   --color-sleek-text: var(--sleek-text);
+  --color-sleek-text-muted: var(--sleek-text-muted);
+  --color-sleek-overlay: var(--sleek-overlay);
+  --color-sleek-overlay-hover: var(--sleek-overlay-hover);
+  --shadow-sleek-xl: var(--sleek-shadow-xl);
+  --shadow-sleek-2xl: var(--sleek-shadow-2xl);
   --font-sans: "Space Grotesk", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
 }
@@ -40,6 +59,14 @@ body {
   background-color: var(--sleek-bg);
   color: var(--sleek-text);
   font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Explicitly style option tags for cross-browser dark mode dropdowns */
+option {
+  background-color: var(--sleek-panel);
+  color: var(--sleek-text);
 }
 
 /* Custom scrollbars for a sleek look */
@@ -61,216 +88,34 @@ body {
   background: var(--sleek-accent);
 }
 
-/* Light Mode Core Overrides using highly robust attribute-based selectors */
-:root.light body {
-  background-color: #F8FAFC !important; /* Premium Slate Light BG */
-  color: #1E293B !important; /* Deep Slate Gray Text */
-}
-
-/* Override all hex dark backgrounds to elegant light panels/cards */
-:root.light [class*="bg-[#0A0C10]"] {
-  background-color: #F8FAFC !important;
-}
-
-:root.light [class*="bg-[#0A0D14]"] {
-  background-color: #FFFFFF !important;
-  color: #1E293B !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-:root.light [class*="from-[#0F1218]"] {
-  background-image: linear-gradient(to right, #FFFFFF, #F8FAFC) !important;
-  color: #1E293B !important;
-}
-
-:root.light [class*="bg-[#0F1218]"] {
-  background-color: #FFFFFF !important;
-  color: #1E293B !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.04) !important;
-}
-
-:root.light [class*="bg-[#11141D]"] {
-  background-color: #F1F5F9 !important;
-  color: #1E293B !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-}
-
-:root.light [class*="bg-[#14181F]"] {
-  background-color: #FFFFFF !important;
-  color: #1E293B !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.03) !important;
-}
-
-:root.light [class*="bg-[#161B26]"],
-:root.light [class*="bg-[#161b26]"] {
-  background-color: #FFFFFF !important;
-  color: #1E293B !important;
-  border-color: rgba(0, 0, 0, 0.08) !important;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05) !important;
-}
-
-:root.light [class*="bg-[#1A1E26]"] {
-  background-color: #E2E8F0 !important;
-  color: #1E293B !important;
-}
-
-:root.light [class*="bg-[#1A1E29]"] {
-  background-color: #F1F5F9 !important;
-  color: #1E293B !important;
-}
-
-:root.light .bg-white\/5,
-:root.light [class*="bg-white/5"] {
-  background-color: rgba(0, 0, 0, 0.04) !important;
-}
-
-:root.light .bg-white\/10,
-:root.light [class*="bg-white/10"] {
-  background-color: rgba(0, 0, 0, 0.07) !important;
-}
-
-/* Ensure typography colors remain highly legible with beautiful dark slate tints */
-:root.light .text-white,
-:root.light [class*="text-white"] {
-  color: #0F172A !important;
-}
-
-:root.light .text-white\/30,
-:root.light [class*="text-white/30"],
-:root.light .text-white\/40,
-:root.light [class*="text-white/40"],
-:root.light .text-white\/45,
-:root.light [class*="text-white/45"],
-:root.light .text-white\/50,
-:root.light [class*="text-white/50"] {
-  color: #64748B !important; /* Sophisticated slate-gray */
-}
-
-:root.light .text-white\/60,
-:root.light [class*="text-white/60"],
-:root.light .text-white\/70,
-:root.light [class*="text-white/70"],
-:root.light .text-white\/80,
-:root.light [class*="text-white/80"] {
-  color: #334155 !important;
-}
-
-/* Convert Lime Accent to a highly elegant forest/grass cricket green in Light Mode */
-:root.light .text-\[\#A3FF12\],
-:root.light [class*="text-[#A3FF12]"],
-:root.light [class*="text-[#a3ff12]"] {
-  color: #16A34A !important;
-}
-
-:root.light .bg-\[\#A3FF12\],
-:root.light [class*="bg-[#A3FF12]"],
-:root.light [class*="bg-[#a3ff12]"] {
-  background-color: #16A34A !important;
-  color: #FFFFFF !important;
-}
-
-/* Keep text readable on elements colored with the primary light accent background */
-:root.light button.bg-\[\#A3FF12\],
-:root.light [class*="bg-[#A3FF12]"].text-black,
-:root.light [class*="bg-[#A3FF12]"] .text-black,
-:root.light [class*="bg-[#a3ff12]"] .text-black {
-  color: #FFFFFF !important;
-}
-
-:root.light .bg-\[\#A3FF12\]\/10,
-:root.light [class*="bg-[#A3FF12]/10"],
-:root.light [class*="bg-[#a3ff12]/10"] {
-  background-color: rgba(22, 163, 74, 0.08) !important;
-}
-
-:root.light .bg-\[\#A3FF12\]\/5,
-:root.light [class*="bg-[#A3FF12]/5"],
-:root.light [class*="bg-[#a3ff12]/5"] {
-  background-color: rgba(22, 163, 74, 0.04) !important;
-}
-
-/* Border styling in Light Mode */
-:root.light .border-white\/5,
-:root.light [class*="border-white/5"],
-:root.light .border-white\/10,
-:root.light [class*="border-white/10"],
-:root.light .border-sleek-border {
-  border-color: rgba(0, 0, 0, 0.07) !important;
-}
-
-:root.light .border-\[\#A3FF12\],
-:root.light [class*="border-[#A3FF12]"],
-:root.light [class*="hover:border-[#A3FF12]"]:hover,
-:root.light [class*="hover:border-[#a3ff12]"]:hover {
-  border-color: #16A34A !important;
-}
-
-:root.light .border-\[\#A3FF12\]\/20,
-:root.light [class*="border-[#A3FF12]/20"] {
-  border-color: rgba(22, 163, 74, 0.15) !important;
-}
-
-/* Modern hover transitions and effects */
-:root.light .hover\:bg-white\/5:hover,
-:root.light [class*="hover:bg-white/5"]:hover {
-  background-color: rgba(0, 0, 0, 0.03) !important;
-}
-
-:root.light .hover\:bg-white\/10:hover,
-:root.light [class*="hover:bg-white/10"]:hover {
-  background-color: rgba(0, 0, 0, 0.06) !important;
-}
-
-:root.light .hover\:bg-\[\#A3FF12\]\/10:hover,
-:root.light [class*="hover:bg-[#A3FF12]/10"]:hover,
-:root.light [class*="hover:bg-[#a3ff12]/10"]:hover {
-  background-color: rgba(22, 163, 74, 0.12) !important;
-}
-
-:root.light [class*="hover:text-[#A3FF12]"]:hover {
-  color: #15803D !important;
-}
-
-/* Ensure headings stay elegant dark slate */
-:root.light h1,
-:root.light h2,
-:root.light h3,
-:root.light h4,
-:root.light h5,
-:root.light h6 {
-  color: #0F172A !important;
-}
-
 /* Form Inputs, Select lists and textareas styling */
 :root.light input,
 :root.light select,
 :root.light textarea {
-  background-color: #FFFFFF !important;
-  color: #1E293B !important;
-  border: 1px solid #CBD5E1 !important;
+  background-color: #FFFFFF;
+  color: #1A202C;
+  border: 1px solid #CBD5E1;
 }
 
 :root.light input::placeholder,
 :root.light textarea::placeholder {
-  color: #94A3B8 !important;
+  color: #718096;
 }
 
 :root.light input:focus,
 :root.light select:focus,
 :root.light textarea:focus {
-  border-color: #16A34A !important;
-  box-shadow: 0 0 0 2px rgba(22, 163, 74, 0.1) !important;
-  outline: none !important;
+  border-color: #FF6B00;
+  box-shadow: 0 0 0 2px rgba(255, 107, 0, 0.1);
+  outline: none;
 }
 
-/* Elegant shadow cards for team generator & dashboards */
-:root.light .shadow-xl {
-  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.04), 0 8px 10px -6px rgba(0, 0, 0, 0.02) !important;
+/* Utilities */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
 }
 
-:root.light .shadow-2xl {
-  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.06) !important;
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
 }
-

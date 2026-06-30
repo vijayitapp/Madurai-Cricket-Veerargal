@@ -1,6 +1,11 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut } from 'firebase/auth';
-import { getFirestore, doc, getDocFromServer } from 'firebase/firestore';
+import {
+  initializeFirestore,
+  persistentLocalCache,
+  persistentMultipleTabManager,
+  doc, getDocFromServer
+} from 'firebase/firestore';
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Support VITE_FIREBASE_* environment variables for easy custom hosting on Netlify/Vercel
@@ -9,8 +14,8 @@ const activeConfig = {
   authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
   projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
   appId: import.meta.env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
-  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID !== undefined 
-    ? import.meta.env.VITE_FIREBASE_DATABASE_ID 
+  firestoreDatabaseId: import.meta.env.VITE_FIREBASE_DATABASE_ID !== undefined
+    ? import.meta.env.VITE_FIREBASE_DATABASE_ID
     : firebaseConfig.firestoreDatabaseId,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
@@ -18,10 +23,13 @@ const activeConfig = {
 
 const app = initializeApp(activeConfig);
 
-// CRITICAL: The app will break without passing the firestoreDatabaseId if a named database is used
-export const db = activeConfig.firestoreDatabaseId
-  ? getFirestore(app, activeConfig.firestoreDatabaseId)
-  : getFirestore(app);
+// CRITICAL: Use new persistent cache API (enableIndexedDbPersistence is deprecated in SDK 9.7+)
+export const db = initializeFirestore(
+  app,
+  { localCache: persistentLocalCache({ tabManager: persistentMultipleTabManager() }) },
+  activeConfig.firestoreDatabaseId || undefined
+);
+
 export const auth = getAuth(app);
 
 export const googleProvider = new GoogleAuthProvider();

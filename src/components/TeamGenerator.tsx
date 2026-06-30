@@ -330,11 +330,11 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
   return (
     <div className="space-y-6">
       {/* Title */}
-      <div className="bg-[#0F1218] border border-white/5 p-5 rounded-2xl text-white space-y-2 shadow-xl">
-        <h3 className="font-extrabold text-sm uppercase tracking-wider text-[#A3FF12] flex items-center gap-2">
-          <Sparkles className="text-[#A3FF12]" size={18} /> Smart Team Generator
+      <div className="bg-sleek-panel border border-sleek-border p-5 rounded-2xl text-sleek-text space-y-2 shadow-sleek-xl">
+        <h3 className="font-extrabold text-sm uppercase tracking-wider text-sleek-accent flex items-center gap-2">
+          <Sparkles className="text-sleek-accent" size={18} /> Smart Team Generator
         </h3>
-        <p className="text-xs text-white/50">
+        <p className="text-xs text-sleek-text-muted">
           Available players: <strong>{availablePlayers.length}</strong>. Supports automatic balance drafting & Double-Sided rules.
         </p>
       </div>
@@ -343,7 +343,7 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
         <div className="bg-red-500/10 border border-red-500/20 p-5 rounded-2xl text-center space-y-3">
           <AlertCircle className="mx-auto text-red-400" size={24} />
           <p className="text-sm text-red-400 font-extrabold uppercase tracking-widest">Insufficient Players Available</p>
-          <p className="text-xs text-white/50">
+          <p className="text-xs text-sleek-text-muted">
             You need at least 2 available players to generate teams. Go to "Players" to register or mark them available.
           </p>
         </div>
@@ -352,10 +352,10 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
           {/* Teams Draft Panel */}
           <div className="lg:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
-              <h4 className="font-extrabold text-white text-sm uppercase tracking-wider">Teams & Formations</h4>
+              <h4 className="font-extrabold text-sleek-text text-sm uppercase tracking-wider">Teams & Formations</h4>
               <button
                 onClick={handleAutoBalance}
-                className="px-3 py-1.5 bg-white/5 border border-white/10 text-white text-xs font-black uppercase tracking-wider rounded-xl hover:bg-white/10 transition flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 bg-sleek-overlay border border-sleek-border text-sleek-text text-xs font-black uppercase tracking-wider rounded-xl hover:bg-sleek-overlay-hover transition flex items-center gap-1.5 cursor-pointer"
               >
                 <Shuffle size={12} /> Auto-Balance Teams
               </button>
@@ -363,13 +363,13 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {/* Team A Card */}
-              <div className="bg-[#14181F] border border-white/5 rounded-2xl p-4 shadow-md space-y-3">
-                <div className="flex items-center justify-between border-b border-white/5 pb-2">
-                  <span className="font-black text-[#A3FF12] text-xs uppercase tracking-widest">{teamAName} ({teamA.length})</span>
+              <div className="bg-sleek-card border border-sleek-border rounded-2xl p-4 shadow-md space-y-3">
+                <div className="flex items-center justify-between border-b border-sleek-border pb-2">
+                  <span className="font-black text-sleek-accent text-xs uppercase tracking-widest">{teamAName} ({teamA.length})</span>
                   <select
                     value={captainA}
                     onChange={(e) => setCaptainA(e.target.value)}
-                    className="text-xs bg-[#0F1218] border border-white/10 text-white px-2 py-1 rounded-lg focus:outline-none font-mono"
+                    className="text-xs bg-sleek-panel border border-sleek-border text-sleek-text px-2 py-1 rounded-lg focus:outline-none font-mono"
                   >
                     <option value="">Captain</option>
                     {teamA.map(id => (
@@ -379,13 +379,13 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                 </div>
                 <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
                   {teamA.map(id => (
-                    <div key={id} className="flex items-center justify-between text-xs p-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl transition">
-                      <span className="font-bold text-white">
+                    <div key={id} className="flex items-center justify-between text-xs p-2 bg-sleek-overlay border border-sleek-border hover:bg-sleek-overlay-hover rounded-xl transition">
+                      <span className="font-bold text-sleek-text">
                         {getPlayerName(id)} {captainA === id && <strong className="text-yellow-400 font-black ml-1.5">(C)</strong>}
                       </span>
                       <button
                         onClick={() => handleSwap(id, 'A')}
-                        className="p-1 text-white/40 hover:text-[#A3FF12] hover:bg-[#A3FF12]/10 rounded transition cursor-pointer"
+                        className="p-1 text-sleek-text-muted hover:text-sleek-accent hover:bg-sleek-accent/10 rounded transition cursor-pointer"
                         title="Swap to Team B"
                       >
                         <ArrowLeftRight size={12} />
@@ -396,13 +396,13 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
               </div>
 
               {/* Team B Card */}
-              <div className="bg-[#14181F] border border-white/5 rounded-2xl p-4 shadow-md space-y-3">
-                <div className="flex items-center justify-between border-b border-white/5 pb-2">
+              <div className="bg-sleek-card border border-sleek-border rounded-2xl p-4 shadow-md space-y-3">
+                <div className="flex items-center justify-between border-b border-sleek-border pb-2">
                   <span className="font-black text-emerald-400 text-xs uppercase tracking-widest">{teamBName} ({teamB.length})</span>
                   <select
                     value={captainB}
                     onChange={(e) => setCaptainB(e.target.value)}
-                    className="text-xs bg-[#0F1218] border border-white/10 text-white px-2 py-1 rounded-lg focus:outline-none font-mono"
+                    className="text-xs bg-sleek-panel border border-sleek-border text-sleek-text px-2 py-1 rounded-lg focus:outline-none font-mono"
                   >
                     <option value="">Captain</option>
                     {teamB.map(id => (
@@ -412,13 +412,13 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                 </div>
                 <div className="space-y-1.5 max-h-[250px] overflow-y-auto">
                   {teamB.map(id => (
-                    <div key={id} className="flex items-center justify-between text-xs p-2 bg-white/5 border border-white/5 hover:bg-white/10 rounded-xl transition">
-                      <span className="font-bold text-white">
+                    <div key={id} className="flex items-center justify-between text-xs p-2 bg-sleek-overlay border border-sleek-border hover:bg-sleek-overlay-hover rounded-xl transition">
+                      <span className="font-bold text-sleek-text">
                         {getPlayerName(id)} {captainB === id && <strong className="text-yellow-400 font-black ml-1.5">(C)</strong>}
                       </span>
                       <button
                         onClick={() => handleSwap(id, 'B')}
-                        className="p-1 text-white/40 hover:text-emerald-400 hover:bg-emerald-400/10 rounded transition cursor-pointer"
+                        className="p-1 text-sleek-text-muted hover:text-emerald-400 hover:bg-emerald-400/10 rounded transition cursor-pointer"
                         title="Swap to Team A"
                       >
                         <ArrowLeftRight size={12} />
@@ -430,13 +430,13 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
             </div>
 
             {/* Double Sided Player Option */}
-            <div className="bg-[#11141D] border border-white/5 p-5 rounded-3xl space-y-4 shadow-xl">
+            <div className="bg-sleek-lightcard border border-sleek-border p-5 rounded-3xl space-y-4 shadow-sleek-xl">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-1">
                   <h5 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
                     <Users size={14} className="text-amber-400" /> Double-Sided Player Rules
                   </h5>
-                  <p className="text-[11px] text-white/50 max-w-xl leading-relaxed font-sans">
+                  <p className="text-xs text-sleek-text-muted max-w-xl leading-relaxed font-sans">
                     {availablePlayers.length % 2 !== 0 ? (
                       <span className="text-amber-400/90 font-bold block">
                         ⚠️ ODD PLAYER COUNT DETECTED ({availablePlayers.length} available). Exactly one player must be designated as a Double-Sided Player. The remaining {availablePlayers.length - 1} players will be split equally between both teams ({expectedTeamSize} vs {expectedTeamSize}).
@@ -454,7 +454,7 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                     <select
                       value={doubleSidedId || ''}
                       onChange={(e) => handleSetDoubleSided(e.target.value || null)}
-                      className="text-xs bg-[#1A1E29] border border-amber-500/20 text-amber-400 px-3 py-2 rounded-xl focus:outline-none font-black uppercase cursor-pointer"
+                      className="text-xs bg-sleek-lightcard border border-amber-500/20 text-amber-400 px-3 py-2 rounded-xl focus:outline-none font-black uppercase cursor-pointer"
                     >
                       <option value="" disabled>-- Select DS Player --</option>
                       {availablePlayers.map(p => (
@@ -477,8 +477,8 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                 <div className="flex items-center gap-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-amber-500 animate-pulse"></div>
-                    <p className="font-extrabold text-white text-xs uppercase">
-                      Selected: <strong className="text-amber-400">{getPlayerName(doubleSidedId)}</strong> <span className="text-[10px] bg-amber-500 text-black px-1.5 py-0.5 rounded ml-2 font-black">DOUBLE-SIDED PLAYER (DS)</span>
+                    <p className="font-extrabold text-sleek-text text-xs uppercase">
+                      Selected: <strong className="text-amber-400">{getPlayerName(doubleSidedId)}</strong> <span className="text-xs bg-amber-500 text-black px-1.5 py-0.5 rounded ml-2 font-black">DOUBLE-SIDED PLAYER (DS)</span>
                     </p>
                   </div>
                 </div>
@@ -489,8 +489,8 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
           {/* Config, Toss & Start Panel */}
           <div className="space-y-6">
             {/* Match Overs Setup */}
-            <div className="bg-[#14181F] border border-white/5 rounded-2xl p-4 shadow-md space-y-3">
-              <h4 className="font-extrabold text-white text-xs uppercase tracking-widest">Match Format</h4>
+            <div className="bg-sleek-card border border-sleek-border rounded-2xl p-4 shadow-md space-y-3">
+              <h4 className="font-extrabold text-sleek-text text-xs uppercase tracking-widest">Match Format</h4>
               <div className="grid grid-cols-4 gap-2">
                 {[5, 6, 8].map(o => (
                   <button
@@ -499,8 +499,8 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                     onClick={() => setSelectedOvers(o)}
                     className={`py-2 text-xs font-black rounded-xl border transition cursor-pointer ${
                       selectedOvers === o
-                        ? 'bg-[#A3FF12] border-[#A3FF12] text-black'
-                        : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                        ? 'bg-sleek-accent border-sleek-accent text-black'
+                        : 'bg-sleek-overlay border-sleek-border text-sleek-text hover:bg-sleek-overlay-hover'
                     }`}
                   >
                     {o} Overs
@@ -511,8 +511,8 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                   onClick={() => setSelectedOvers(0)}
                   className={`py-2 text-xs font-black rounded-xl border transition cursor-pointer ${
                     selectedOvers === 0
-                      ? 'bg-[#A3FF12] border-[#A3FF12] text-black'
-                      : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                      ? 'bg-sleek-accent border-sleek-accent text-black'
+                      : 'bg-sleek-overlay border-sleek-border text-sleek-text hover:bg-sleek-overlay-hover'
                   }`}
                 >
                   Custom
@@ -525,15 +525,15 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                   placeholder="Enter custom overs count"
                   value={customOvers}
                   onChange={(e) => setCustomOvers(e.target.value)}
-                  className="w-full px-3 py-2 bg-white/5 text-white border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#A3FF12] text-xs font-mono"
+                  className="w-full px-3 py-2 bg-sleek-overlay text-sleek-text border border-sleek-border rounded-xl focus:outline-none focus:ring-1 focus:ring-sleek-accent text-xs font-mono"
                 />
               )}
             </div>
 
             {/* Match Toss Configuration */}
-            <div className="bg-[#14181F] border border-white/5 rounded-2xl p-4 shadow-md space-y-4">
+            <div className="bg-sleek-card border border-sleek-border rounded-2xl p-4 shadow-md space-y-4">
               <div className="flex justify-between items-center">
-                <h4 className="font-extrabold text-white text-xs uppercase tracking-widest">Match Toss Configuration</h4>
+                <h4 className="font-extrabold text-sleek-text text-xs uppercase tracking-widest">Match Toss Configuration</h4>
                 {(tossCompleted || tossWinner || tossDecision) && (
                   <button
                     type="button"
@@ -542,7 +542,7 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                       setTossWinner(null);
                       setTossDecision(null);
                     }}
-                    className="text-[10px] text-white/45 hover:text-white uppercase font-black tracking-wider hover:underline cursor-pointer"
+                    className="text-xs text-sleek-text-muted hover:text-sleek-text uppercase font-black tracking-wider hover:underline cursor-pointer"
                   >
                     Reset
                   </button>
@@ -551,7 +551,7 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
 
               {/* Toss Winner Selector */}
               <div className="space-y-2">
-                <span className="text-[11px] text-white/50 font-black uppercase tracking-wider block">Who won the toss?</span>
+                <span className="text-xs text-sleek-text-muted font-black uppercase tracking-wider block">Who won the toss?</span>
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     type="button"
@@ -559,10 +559,10 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                       setTossWinner('teamA');
                       setTossCompleted(true);
                     }}
-                    className={`py-2 px-1 text-[11px] truncate font-bold rounded-xl border transition cursor-pointer ${
+                    className={`py-2 px-1 text-xs truncate font-bold rounded-xl border transition cursor-pointer ${
                       tossWinner === 'teamA'
-                        ? 'bg-[#A3FF12] border-[#A3FF12] text-black font-black'
-                        : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                        ? 'bg-sleek-accent border-sleek-accent text-black font-black'
+                        : 'bg-sleek-overlay border-sleek-border text-sleek-text hover:bg-sleek-overlay-hover'
                     }`}
                   >
                     {teamAName}
@@ -573,10 +573,10 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                       setTossWinner('teamB');
                       setTossCompleted(true);
                     }}
-                    className={`py-2 px-1 text-[11px] truncate font-bold rounded-xl border transition cursor-pointer ${
+                    className={`py-2 px-1 text-xs truncate font-bold rounded-xl border transition cursor-pointer ${
                       tossWinner === 'teamB'
-                        ? 'bg-[#A3FF12] border-[#A3FF12] text-black font-black'
-                        : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                        ? 'bg-sleek-accent border-sleek-accent text-black font-black'
+                        : 'bg-sleek-overlay border-sleek-border text-sleek-text hover:bg-sleek-overlay-hover'
                     }`}
                   >
                     {teamBName}
@@ -587,7 +587,7 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
               {/* Toss Decision Selector */}
               {tossWinner && (
                 <div className="space-y-2 animate-in fade-in slide-in-from-top-1 duration-200">
-                  <span className="text-[11px] text-white/50 font-black uppercase tracking-wider block">
+                  <span className="text-xs text-sleek-text-muted font-black uppercase tracking-wider block">
                     What did {tossWinner === 'teamA' ? teamAName : teamBName} elect to do?
                   </span>
                   <div className="grid grid-cols-2 gap-2">
@@ -596,8 +596,8 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                       onClick={() => setTossDecision('bat')}
                       className={`py-2 text-xs font-bold rounded-xl border transition cursor-pointer ${
                         tossDecision === 'bat'
-                          ? 'bg-[#A3FF12] border-[#A3FF12] text-black font-black'
-                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                          ? 'bg-sleek-accent border-sleek-accent text-black font-black'
+                          : 'bg-sleek-overlay border-sleek-border text-sleek-text hover:bg-sleek-overlay-hover'
                       }`}
                     >
                       🏸 Bat First
@@ -607,8 +607,8 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                       onClick={() => setTossDecision('bowl')}
                       className={`py-2 text-xs font-bold rounded-xl border transition cursor-pointer ${
                         tossDecision === 'bowl'
-                          ? 'bg-[#A3FF12] border-[#A3FF12] text-black font-black'
-                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
+                          ? 'bg-sleek-accent border-sleek-accent text-black font-black'
+                          : 'bg-sleek-overlay border-sleek-border text-sleek-text hover:bg-sleek-overlay-hover'
                       }`}
                     >
                       🥎 Bowl First
@@ -619,10 +619,10 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
 
               {/* OR Divider */}
               {!tossWinner && (
-                <div className="flex items-center gap-2 py-1 text-white/20 text-[10px] font-bold uppercase tracking-widest justify-center">
-                  <div className="h-[1px] bg-white/5 flex-1"></div>
+                <div className="flex items-center gap-2 py-1 text-sleek-text/20 text-xs font-bold uppercase tracking-widest justify-center">
+                  <div className="h-[1px] bg-sleek-overlay flex-1"></div>
                   <span>OR</span>
-                  <div className="h-[1px] bg-white/5 flex-1"></div>
+                  <div className="h-[1px] bg-sleek-overlay flex-1"></div>
                 </div>
               )}
 
@@ -631,18 +631,18 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
                 type="button"
                 onClick={handleToss}
                 disabled={tossFlipping}
-                className="w-full py-2 bg-[#0F1218] border border-white/10 hover:border-[#A3FF12] hover:bg-[#A3FF12]/10 text-white hover:text-[#A3FF12] text-xs font-black uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
+                className="w-full py-2 bg-sleek-panel border border-sleek-border hover:border-sleek-accent hover:bg-sleek-accent/10 text-sleek-text hover:text-sleek-accent text-xs font-black uppercase tracking-widest rounded-xl transition flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Trophy size={12} />
                 {tossFlipping ? 'Flipping Coin...' : 'Flip Random Coin Toss'}
               </button>
 
               {tossCompleted && tossWinner && tossDecision && (
-                <div className="p-3 bg-[#A3FF12]/10 border border-[#A3FF12]/20 rounded-xl text-center space-y-1">
-                  <p className="text-xs text-white">
+                <div className="p-3 bg-sleek-accent/10 border border-sleek-accent/20 rounded-xl text-center space-y-1">
+                  <p className="text-xs text-sleek-text">
                     🏆 <strong>{tossWinner === 'teamA' ? teamAName : teamBName}</strong> won the toss
                   </p>
-                  <p className="text-[11px] text-[#A3FF12] font-black uppercase tracking-widest">
+                  <p className="text-xs text-sleek-accent font-black uppercase tracking-widest">
                     Elected to {tossDecision} first
                   </p>
                 </div>
@@ -652,7 +652,7 @@ export default function TeamGenerator({ players, playerStats, onMatchCreated }: 
             {/* Start Scoring Button */}
             <button
               onClick={handleStartMatch}
-              className="w-full py-3.5 bg-[#A3FF12] hover:bg-[#A3FF12]/80 text-black font-black uppercase tracking-widest rounded-2xl shadow-xl transition flex items-center justify-center gap-2 text-sm cursor-pointer"
+              className="w-full py-3.5 bg-sleek-accent hover:bg-sleek-accent/80 text-black font-black uppercase tracking-widest rounded-2xl shadow-sleek-xl transition flex items-center justify-center gap-2 text-sm cursor-pointer"
             >
               <Trophy size={16} /> Start Match Scoring
             </button>

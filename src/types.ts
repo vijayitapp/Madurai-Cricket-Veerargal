@@ -51,6 +51,7 @@ export interface TeamScore {
 export interface BallEvent {
   id: string;
   timestamp: string;
+  innings: 1 | 2; // which innings this ball belongs to
   overIndex: number; // 0-based over
   ballIndex: number; // 1-6
   batterId: string;
@@ -98,6 +99,7 @@ export interface Match {
   target?: number | null;
   winner?: string | null; // "teamA" | "teamB" | "draw"
   playerOfTheMatch?: string | null;
+  previousState?: string | null; // JSON string of Match state before the last ball
   bestBatter?: string | null;
   bestBowler?: string | null;
   mvp?: string | null;

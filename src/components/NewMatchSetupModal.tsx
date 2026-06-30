@@ -3,102 +3,90 @@ import { Player, PlayerStats, Match } from '../types';
 import { db, handleFirestoreError, OperationType } from '../firebase';
 import { doc, setDoc, updateDoc } from 'firebase/firestore';
 import { AnimatePresence, motion } from 'motion/react';
-import { X, Trophy, Sparkles, AlertTriangle, Play, ArrowRight, RefreshCw, CheckCircle2, Circle, Users, Shield } from 'lucide-react';
+import { X, Trophy, AlertTriangle, ArrowRight, CheckCircle2, Users, Coins, Shuffle } from 'lucide-react';
 
 interface NewMatchSetupModalProps {
   isOpen: boolean;
   onClose: () => void;
   players: Player[];
   playerStats: PlayerStats[];
+  matches?: Match[];
   onMatchCreated: (matchId: string) => void;
 }
 
-type SetupStep = 'teams' | 'toss' | 'decision';
+type SetupStep = 'draft' | 'toss';
 
 export default function NewMatchSetupModal({
   isOpen,
   onClose,
   players,
   playerStats,
+  matches,
   onMatchCreated
 }: NewMatchSetupModalProps) {
-  const [step, setStep] = useState<SetupStep>('teams');
+  const [step, setStep] = useState<SetupStep>('draft');
 
-  // Step 1: Team Configuration State
+  // Config State
   const [teamAName, setTeamAName] = useState<string>('RAMCO VEERARGAL');
   const [teamBName, setTeamBName] = useState<string>('HARD WORKERS');
+  const [oversCount, setOversCount] = useState<number>(6);
+  const [customOvers, setCustomOvers] = useState<string>('');
+
+  // Roster State
+  const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
   const [teamAPlayers, setTeamAPlayers] = useState<string[]>([]);
   const [teamBPlayers, setTeamBPlayers] = useState<string[]>([]);
   const [doubleSidedId, setDoubleSidedId] = useState<string | null>(null);
   const [captainA, setCaptainA] = useState<string>('');
   const [captainB, setCaptainB] = useState<string>('');
-  const [oversCount, setOversCount] = useState<number>(6);
-  const [customOvers, setCustomOvers] = useState<string>('');
 
-  // Step 2: Toss State
-  const [tossCaller, setTossCaller] = useState<'teamA' | 'teamB' | null>(null);
-  const [tossCall, setTossCall] = useState<'heads' | 'tails' | null>(null);
-  const [isFlipping, setIsFlipping] = useState<boolean>(false);
-  const [tossCompleted, setTossCompleted] = useState<boolean>(false);
-  const [tossResult, setTossResult] = useState<'heads' | 'tails' | null>(null);
+  // Toss State
   const [tossWinner, setTossWinner] = useState<'teamA' | 'teamB' | null>(null);
-
-  // Step 3: Decision State
   const [tossDecision, setTossDecision] = useState<'bat' | 'bowl' | null>(null);
+  
+  // UI State
   const [saving, setSaving] = useState<boolean>(false);
-
-  // Drag and drop hover states
+  const [showAttendance, setShowAttendance] = useState<boolean>(false);
   const [isDragOverA, setIsDragOverA] = useState<boolean>(false);
   const [isDragOverB, setIsDragOverB] = useState<boolean>(false);
-  const [isDragOverPool, setIsDragOverPool] = useState<boolean>(false);
 
-  // Local copy of players for managing availability on the fly
-  const [localPlayers, setLocalPlayers] = useState<Player[]>([]);
-
+  // Initialize and Auto-Draft on open
   useEffect(() => {
     if (isOpen) {
       setLocalPlayers(players);
-      setStep('teams');
-      resetToss();
-
-      // Assign random team names
+      setStep('draft');
+      setTossWinner(null);
+      setTossDecision(null);
+      
       const isRandom = Math.random() < 0.5;
       setTeamAName(isRandom ? 'RAMCO VEERARGAL' : 'HARD WORKERS');
       setTeamBName(isRandom ? 'HARD WORKERS' : 'RAMCO VEERARGAL');
+      
+      const completedMatches = matches?.filter(m => m.status === 'completed' || m.status === 'aborted') || [];
+      const lastMatch = completedMatches.length > 0 ? completedMatches[completedMatches.length - 1] : null;
 
-      // Teams should not be auto-populated. The scorer will manually draft them!
-      setTeamAPlayers([]);
-      setTeamBPlayers([]);
-      setDoubleSidedId(null);
-      setCaptainA('');
-      setCaptainB('');
+      if (lastMatch) {
+        setTeamAPlayers(lastMatch.teamA.players.filter(id => id !== lastMatch.doubleSidedPlayerId));
+        setTeamBPlayers(lastMatch.teamB.players.filter(id => id !== lastMatch.doubleSidedPlayerId));
+        setDoubleSidedId(lastMatch.doubleSidedPlayerId || null);
+        setCaptainA(lastMatch.captainA || '');
+        setCaptainB(lastMatch.captainB || '');
+        setTeamAName(lastMatch.teamA.name);
+        setTeamBName(lastMatch.teamB.name);
+        setOversCount(lastMatch.overs);
+      } else {
+        performAutoDraft(players, playerStats);
+      }
     }
-  }, [isOpen, players, playerStats]);
+  }, [isOpen, matches, players, playerStats]);
 
-  const handleSelectDoubleSided = (id: string | null) => {
-    setDoubleSidedId(id);
-    if (id) {
-      setTeamAPlayers(prev => prev.filter(p => p !== id));
-      setTeamBPlayers(prev => prev.filter(p => p !== id));
-      if (captainA === id) setCaptainA('');
-      if (captainB === id) setCaptainB('');
-    }
-  };
-
-  const suggestRandomDoubleSided = () => {
-    const availableList = localPlayers.filter(p => p.available);
-    if (availableList.length === 0) return;
-    const randomPlayer = availableList[Math.floor(Math.random() * availableList.length)];
-    handleSelectDoubleSided(randomPlayer.id);
-  };
-
-  const handleAutoBalanceTeams = () => {
-    const available = localPlayers.filter(p => p.available);
+  const performAutoDraft = (currentPlayers: Player[], stats: PlayerStats[]) => {
+    const available = currentPlayers.filter(p => p.available);
     if (available.length < 2) return;
 
     // Sort by MVP points
     const statsMap = new Map<string, number>();
-    playerStats.forEach(s => statsMap.set(s.id, s.awards.mvpPoints || 0));
+    stats.forEach(s => statsMap.set(s.id, s.awards.mvpPoints || 0));
     const sorted = [...available].sort((a, b) => (statsMap.get(b.id) || 0) - (statsMap.get(a.id) || 0));
 
     const listA: string[] = [];
@@ -107,12 +95,14 @@ export default function NewMatchSetupModal({
 
     const isOdd = sorted.length % 2 !== 0;
     const pool = [...sorted];
+    
+    // Auto-assign lowest MVP as Double Sided if odd
     if (isOdd && pool.length > 0) {
-      const mid = Math.floor(pool.length / 2);
-      const [ds] = pool.splice(mid, 1);
-      dsId = ds.id;
+      const ds = pool.pop(); // Remove the last (lowest MVP)
+      if (ds) dsId = ds.id;
     }
 
+    // Snake draft to balance teams
     pool.forEach((p, idx) => {
       if (idx % 2 === 0) {
         listA.push(p.id);
@@ -125,86 +115,35 @@ export default function NewMatchSetupModal({
     setTeamBPlayers(listB);
     setDoubleSidedId(dsId);
 
-    // Default captains
+    // Auto-assign highest MVP as Captains
     if (listA.length > 0) setCaptainA(listA[0]);
     if (listB.length > 0) setCaptainB(listB[0]);
   };
 
-  // Synchronize Double-Sided Player based on total available players
-  useEffect(() => {
-    const availableList = localPlayers.filter(p => p.available);
-    const availableCount = availableList.length;
-    const isOdd = availableCount % 2 !== 0;
-
-    if (!isOdd) {
-      // Even number of available players: NO Double-Sided player should exist
-      if (doubleSidedId !== null) {
-        setDoubleSidedId(null);
-      }
-    } else {
-      // Odd number of available players: EXACTLY one must be designated as Double-Sided
-      const currentIsAvailable = availableList.some(p => p.id === doubleSidedId);
-      if (!doubleSidedId || !currentIsAvailable) {
-        // Find an available player who isn't already assigned or just pick first available
-        const poolPlayers = availableList.filter(p => !teamAPlayers.includes(p.id) && !teamBPlayers.includes(p.id));
-        if (poolPlayers.length > 0) {
-          const firstPool = poolPlayers[0].id;
-          handleSelectDoubleSided(firstPool);
-        } else if (availableList.length > 0) {
-          const firstAvail = availableList[0].id;
-          handleSelectDoubleSided(firstAvail);
-        }
-      }
-    }
-  }, [localPlayers, doubleSidedId]);
-
-  const resetToss = () => {
-    setTossCaller(null);
-    setTossCall(null);
-    setIsFlipping(false);
-    setTossCompleted(false);
-    setTossResult(null);
-    setTossWinner(null);
-    setTossDecision(null);
-  };
-
-  const getPlayerName = (id: string) => localPlayers.find(p => p.id === id)?.name || 'Unknown';
-  const getPlayerAvatar = (id: string) => localPlayers.find(p => p.id === id)?.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`;
-
-  const togglePlayerAvailability = async (playerId: string) => {
-    const updated = localPlayers.map(p => {
-      if (p.id === playerId) {
-        const available = !p.available;
-        // If they become unavailable, remove them from any selected teams
-        if (!available) {
-          setTeamAPlayers(prev => prev.filter(id => id !== playerId));
-          setTeamBPlayers(prev => prev.filter(id => id !== playerId));
-          if (doubleSidedId === playerId) setDoubleSidedId(null);
-          if (captainA === playerId) setCaptainA('');
-          if (captainB === playerId) setCaptainB('');
-        }
-        return { ...p, available };
-      }
-      return p;
-    });
+  const toggleAttendance = async (playerId: string) => {
+    const updated = localPlayers.map(p => p.id === playerId ? { ...p, available: !p.available } : p);
     setLocalPlayers(updated);
-
-    // Persist player availability to db silently
+    
+    // If they became unavailable, remove them from lists
+    const p = localPlayers.find(x => x.id === playerId);
+    if (p && p.available) {
+      setTeamAPlayers(prev => prev.filter(id => id !== playerId));
+      setTeamBPlayers(prev => prev.filter(id => id !== playerId));
+      if (doubleSidedId === playerId) setDoubleSidedId(null);
+    }
+    
+    // Persist silently
     try {
       const player = localPlayers.find(p => p.id === playerId);
       if (player) {
-        await updateDoc(doc(db, 'players', playerId), {
-          available: !player.available,
-          updatedAt: new Date().toISOString()
-        });
+        await updateDoc(doc(db, 'players', playerId), { available: !player.available, updatedAt: new Date().toISOString() });
       }
     } catch (err) {
-      console.error('Failed to update player availability in background:', err);
+      console.error(err);
     }
   };
 
-  const moveToTeam = (playerId: string, targetTeam: 'A' | 'B' | 'pool') => {
-    // Remove from existing teams
+  const moveToTeam = (playerId: string, targetTeam: 'A' | 'B' | 'DS') => {
     setTeamAPlayers(prev => prev.filter(id => id !== playerId));
     setTeamBPlayers(prev => prev.filter(id => id !== playerId));
     if (doubleSidedId === playerId) setDoubleSidedId(null);
@@ -215,206 +154,71 @@ export default function NewMatchSetupModal({
     } else if (targetTeam === 'B') {
       setTeamBPlayers(prev => [...prev, playerId]);
       if (!captainB) setCaptainB(playerId);
+    } else if (targetTeam === 'DS') {
+      setDoubleSidedId(playerId);
     }
-
-    // Auto update captains if they were removed
-    setTimeout(() => {
-      setTeamAPlayers(a => {
-        if (a.length > 0 && !a.includes(captainA)) setCaptainA(a[0]);
-        return a;
-      });
-      setTeamBPlayers(b => {
-        if (b.length > 0 && !b.includes(captainB)) setCaptainB(b[0]);
-        return b;
-      });
-    }, 50);
   };
 
-  const handleRandomizeNames = () => {
-    const isRandom = Math.random() < 0.5;
-    setTeamAName(isRandom ? 'RAMCO VEERARGAL' : 'HARD WORKERS');
-    setTeamBName(isRandom ? 'HARD WORKERS' : 'RAMCO VEERARGAL');
+  const handleDigitalToss = () => {
+    const winner = Math.random() < 0.5 ? 'teamA' : 'teamB';
+    const decision = Math.random() < 0.5 ? 'bat' : 'bowl';
+    setTossWinner(winner);
+    setTossDecision(decision);
   };
 
-  // Toss Simulation
-  const handleFlipCoin = () => {
-    if (!tossCaller || !tossCall) {
-      alert('Please select who calls the toss and their choice (Heads/Tails) first!');
-      return;
-    }
-    setIsFlipping(true);
-    setTossCompleted(false);
+  const getPlayerName = (id: string) => localPlayers.find(p => p.id === id)?.name || 'Unknown';
+  const getPlayerAvatar = (id: string) => localPlayers.find(p => p.id === id)?.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${id}`;
 
-    setTimeout(() => {
-      const outcome = Math.random() < 0.5 ? 'heads' : 'tails';
-      setTossResult(outcome);
-
-      const callerWon = tossCall === outcome;
-      if (callerWon) {
-        setTossWinner(tossCaller);
-      } else {
-        setTossWinner(tossCaller === 'teamA' ? 'teamB' : 'teamA');
-      }
-
-      setIsFlipping(false);
-      setTossCompleted(true);
-    }, 1500);
-  };
-
-  // Validation Rules
   const activeOvers = oversCount === 0 ? parseInt(customOvers) || 5 : oversCount;
-  const availableList = localPlayers.filter(p => p.available);
-  const availableCount = availableList.length;
-  const isOdd = availableCount % 2 !== 0;
-  const expectedTeamSize = isOdd ? (availableCount - 1) / 2 : availableCount / 2;
+  const isBalanced = teamAPlayers.length > 0 && teamAPlayers.length === teamBPlayers.length;
 
-  const isBalanced = teamAPlayers.length === expectedTeamSize && teamBPlayers.length === expectedTeamSize;
-  const hasCaptains = captainA !== '' && captainB !== '';
-  const teamAHasPlayers = teamAPlayers.length > 0;
-  const teamBHasPlayers = teamBPlayers.length > 0;
-  const stepTeamsValid = isBalanced && hasCaptains && teamAHasPlayers && teamBHasPlayers;
-
-  // Final match submission
   const handleFinalizeMatch = async () => {
-    if (!tossWinner || !tossDecision) {
-      alert('Please complete the toss and decide to Bat or Bowl first!');
-      return;
-    }
-
+    if (!tossWinner || !tossDecision) return;
     setSaving(true);
     const matchId = `match_${Date.now()}`;
-
-    // Configure who bats first
-    let battingFirst: 'teamA' | 'teamB' = 'teamA';
-    if (tossWinner === 'teamA') {
-      battingFirst = tossDecision === 'bat' ? 'teamA' : 'teamB';
-    } else {
-      battingFirst = tossDecision === 'bat' ? 'teamB' : 'teamA';
-    }
+    const battingFirst = tossWinner === 'teamA' ? (tossDecision === 'bat' ? 'teamA' : 'teamB') : (tossDecision === 'bat' ? 'teamB' : 'teamA');
 
     const generateEmptyScore = (playerIds: string[]) => {
-      const battingList = playerIds.map(id => {
-        const player = localPlayers.find(p => p.id === id);
-        return {
-          playerId: id,
-          name: player?.name || 'Unknown',
-          runs: 0,
-          balls: 0,
-          fours: 0,
-          sixes: 0,
-          dismissed: false,
-          dismissalType: null
-        };
-      });
+      const battingList = playerIds.map(id => ({
+        playerId: id, name: getPlayerName(id), runs: 0, balls: 0, fours: 0, sixes: 0, dismissed: false, dismissalType: null
+      }));
+      const bowlingList = playerIds.map(id => ({
+        playerId: id, name: getPlayerName(id), overs: 0, balls: 0, maidens: 0, runs: 0, wickets: 0, economy: 0
+      }));
 
       if (doubleSidedId) {
-        const dsPlayer = localPlayers.find(p => p.id === doubleSidedId);
-        if (dsPlayer) {
-          battingList.push({
-            playerId: doubleSidedId,
-            name: `${dsPlayer.name} (DS)`,
-            runs: 0,
-            balls: 0,
-            fours: 0,
-            sixes: 0,
-            dismissed: false,
-            dismissalType: null
-          });
-        }
+        const dsName = `${getPlayerName(doubleSidedId)} (DS)`;
+        battingList.push({ playerId: doubleSidedId, name: dsName, runs: 0, balls: 0, fours: 0, sixes: 0, dismissed: false, dismissalType: null });
+        bowlingList.push({ playerId: doubleSidedId, name: dsName, overs: 0, balls: 0, maidens: 0, runs: 0, wickets: 0, economy: 0 });
       }
-
-      const bowlingList = playerIds.map(id => {
-        const player = localPlayers.find(p => p.id === id);
-        return {
-          playerId: id,
-          name: player?.name || 'Unknown',
-          overs: 0,
-          balls: 0,
-          maidens: 0,
-          runs: 0,
-          wickets: 0,
-          economy: 0
-        };
-      });
-
-      if (doubleSidedId) {
-        const dsPlayer = localPlayers.find(p => p.id === doubleSidedId);
-        if (dsPlayer) {
-          bowlingList.push({
-            playerId: doubleSidedId,
-            name: `${dsPlayer.name} (DS)`,
-            overs: 0,
-            balls: 0,
-            maidens: 0,
-            runs: 0,
-            wickets: 0,
-            economy: 0
-          });
-        }
-      }
-
-      return {
-        runs: 0,
-        wickets: 0,
-        balls: 0,
-        extras: { wide: 0, noBall: 0, bye: 0, legBye: 0, total: 0 },
-        batting: battingList,
-        bowling: bowlingList
-      };
+      return { runs: 0, wickets: 0, balls: 0, extras: { wide: 0, noBall: 0, bye: 0, legBye: 0, total: 0 }, batting: battingList, bowling: bowlingList };
     };
 
     const newMatch: Match = {
-      id: matchId,
-      status: 'scoring',
-      overs: activeOvers,
-      teamA: {
-        name: teamAName,
-        players: teamAPlayers
-      },
-      teamB: {
-        name: teamBName,
-        players: teamBPlayers
-      },
-      doubleSidedPlayerId: doubleSidedId,
-      captainA,
-      captainB,
-      battingFirst,
-      scores: {
-        teamA: generateEmptyScore(teamAPlayers),
-        teamB: generateEmptyScore(teamBPlayers)
-      },
-      currentInnings: 1,
-      currentBatter1Id: battingFirst === 'teamA' ? teamAPlayers[0] : teamBPlayers[0],
-      currentBatter2Id: battingFirst === 'teamA' ? teamAPlayers[1] || teamAPlayers[0] : teamBPlayers[1] || teamBPlayers[0],
-      currentBowlerId: battingFirst === 'teamA' ? teamBPlayers[0] : teamAPlayers[0],
-      oversCompleted: 0,
-      ballsInOver: 0,
-      target: null,
-      timeline: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      tossWinner: tossWinner === 'teamA' ? teamAName : teamBName,
-      tossDecision
+      id: matchId, status: 'scoring', overs: activeOvers,
+      teamA: { name: teamAName, players: teamAPlayers },
+      teamB: { name: teamBName, players: teamBPlayers },
+      doubleSidedPlayerId: doubleSidedId, captainA, captainB, battingFirst,
+      scores: { teamA: generateEmptyScore(teamAPlayers), teamB: generateEmptyScore(teamBPlayers) },
+      currentInnings: 1, currentBatter1Id: null,
+      currentBatter2Id: null,
+      currentBowlerId: null,
+      oversCompleted: 0, ballsInOver: 0, target: null, timeline: [],
+      createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
+      tossWinner: tossWinner === 'teamA' ? teamAName : teamBName, tossDecision
     };
 
     try {
       await setDoc(doc(db, 'matches', matchId), newMatch);
-
-      // Update attendance count for playing players
       const allPlaying = [...teamAPlayers, ...teamBPlayers];
       if (doubleSidedId) allPlaying.push(doubleSidedId);
-
-      await Promise.all(
-        allPlaying.map(async (id) => {
-          const player = localPlayers.find(p => p.id === id);
-          if (player) {
-            await updateDoc(doc(db, 'players', id), {
-              attendance: (player.attendance || 0) + 1,
-              updatedAt: new Date().toISOString()
-            });
-          }
-        })
-      );
+      
+      await Promise.all(allPlaying.map(async (id) => {
+        const player = localPlayers.find(p => p.id === id);
+        if (player) {
+          await updateDoc(doc(db, 'players', id), { attendance: (player.attendance || 0) + 1, updatedAt: new Date().toISOString() });
+        }
+      }));
 
       onMatchCreated(matchId);
       onClose();
@@ -429,825 +233,243 @@ export default function NewMatchSetupModal({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-2 md:p-4 overflow-y-auto">
-      <div className="bg-[#0A0D14] border border-white/10 rounded-3xl w-full max-w-4xl shadow-2xl overflow-hidden flex flex-col my-4 max-h-[90vh]">
+      <div className="bg-sleek-bg border border-sleek-border rounded-3xl w-full max-w-4xl shadow-sleek-2xl overflow-hidden flex flex-col my-4 max-h-[90vh]">
         
         {/* Header */}
-        <div className="p-5 border-b border-white/5 flex items-center justify-between bg-gradient-to-r from-[#0F1218] to-[#141824]">
-          <div className="flex items-center gap-2">
-            <Trophy className="text-[#A3FF12]" size={20} />
+        <div className="p-5 border-b border-sleek-border flex items-center justify-between bg-gradient-to-r from-sleek-panel to-sleek-card">
+          <div className="flex items-center gap-3">
+            <div className="bg-sleek-accent/10 p-2 rounded-xl">
+              <Trophy className="text-sleek-accent" size={24} />
+            </div>
             <div>
-              <h3 className="font-extrabold text-white text-base">New Match Setup Flow</h3>
-              <p className="text-[11px] text-white/50">Follow the steps to configure and start live scoring</p>
+              <h3 className="font-extrabold text-sleek-text text-lg">Express Match Setup</h3>
+              <p className="text-xs text-sleek-text-muted">Smart defaults applied. Review and start playing.</p>
             </div>
           </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 hover:bg-white/5 text-white/60 hover:text-white rounded-xl transition cursor-pointer"
-          >
-            <X size={18} />
+          <button onClick={onClose} className="p-2 hover:bg-sleek-overlay text-sleek-text-muted hover:text-sleek-text rounded-xl transition cursor-pointer">
+            <X size={20} />
           </button>
         </div>
 
-        {/* Steps Progress Bar */}
-        <div className="bg-white/5 px-6 py-2 border-b border-white/5 flex items-center justify-between text-xs font-black uppercase tracking-widest text-white/40">
-          <div className={`flex items-center gap-1.5 ${step === 'teams' ? 'text-[#A3FF12]' : 'text-emerald-400'}`}>
-            <span>1. Teams & Captains</span>
-            {stepTeamsValid && <CheckCircle2 size={12} className="text-emerald-400" />}
+        {/* Steps Header */}
+        <div className="bg-sleek-overlay px-6 py-2.5 border-b border-sleek-border flex items-center gap-6 text-xs font-black uppercase tracking-widest text-sleek-text-muted">
+          <div className={`flex items-center gap-2 ${step === 'draft' ? 'text-sleek-accent' : 'text-emerald-400'}`}>
+            <span>1. Confirm Lineups</span>
+            {step === 'toss' && <CheckCircle2 size={14} className="text-emerald-400" />}
           </div>
-          <ArrowRight size={12} />
-          <div className={`flex items-center gap-1.5 ${step === 'toss' ? 'text-[#A3FF12]' : tossCompleted ? 'text-emerald-400' : ''}`}>
-            <span>2. Animated Toss</span>
-            {tossCompleted && <CheckCircle2 size={12} className="text-emerald-400" />}
-          </div>
-          <ArrowRight size={12} />
-          <div className={`flex items-center gap-1.5 ${step === 'decision' ? 'text-[#A3FF12]' : ''}`}>
-            <span>3. Bat/Bowl Select</span>
+          <ArrowRight size={14} />
+          <div className={`flex items-center gap-2 ${step === 'toss' ? 'text-sleek-accent' : ''}`}>
+            <span>2. Toss & Start</span>
           </div>
         </div>
 
-        {/* Scrollable Step Content Container */}
-        <div className="p-5 md:p-6 overflow-y-auto flex-1 space-y-6">
-
-          {/* STEP 1: TEAMS & CAPTAINS SETUP */}
-          {step === 'teams' && (
+        {/* Content */}
+        <div className="p-5 md:p-6 overflow-y-auto flex-1">
+          {step === 'draft' && (
             <div className="space-y-6">
               
-              {/* Names randomizer and Format config */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 bg-white/5 p-4 rounded-2xl border border-white/5">
-                <div className="space-y-2">
-                  <span className="text-[11px] text-white/50 font-black uppercase tracking-wider block">Team Names (Randomized)</span>
-                  <div className="flex items-center gap-3">
-                    <div className="flex-1 bg-black/30 border border-white/5 px-3 py-2 rounded-xl text-xs font-black text-[#A3FF12] uppercase tracking-wider">
-                      {teamAName}
-                    </div>
-                    <span className="text-white/20 font-bold text-xs">VS</span>
-                    <div className="flex-1 bg-black/30 border border-white/5 px-3 py-2 rounded-xl text-xs font-black text-emerald-400 uppercase tracking-wider">
-                      {teamBName}
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleRandomizeNames}
-                      className="p-2 bg-white/5 hover:bg-white/10 rounded-xl transition border border-white/10 text-white cursor-pointer"
-                      title="Shuffle Team Names"
-                    >
-                      <RefreshCw size={14} />
-                    </button>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <span className="text-[11px] text-white/50 font-black uppercase tracking-wider block">Overs Format</span>
-                  <div className="grid grid-cols-4 gap-1.5">
+              {/* Top Config Row */}
+              <div className="flex flex-col md:flex-row gap-4 items-end">
+                <div className="flex-1 space-y-2 w-full">
+                  <span className="text-[10px] text-sleek-text-muted font-black uppercase tracking-wider block">Match Format</span>
+                  <div className="flex gap-2">
                     {[5, 6, 8].map(o => (
-                      <button
-                        key={o}
-                        type="button"
-                        onClick={() => setOversCount(o)}
-                        className={`py-1.5 text-xs font-black rounded-xl border transition cursor-pointer ${
-                          oversCount === o
-                            ? 'bg-[#A3FF12] border-[#A3FF12] text-black'
-                            : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
-                        }`}
-                      >
-                        {o} Overs
+                      <button key={o} onClick={() => setOversCount(o)} className={`flex-1 py-2 text-xs font-black rounded-xl border transition cursor-pointer ${oversCount === o ? 'bg-sleek-accent border-sleek-accent text-black' : 'bg-sleek-overlay border-sleek-border text-sleek-text'}`}>
+                        {o} Ov
                       </button>
                     ))}
-                    <button
-                      type="button"
-                      onClick={() => setOversCount(0)}
-                      className={`py-1.5 text-xs font-black rounded-xl border transition cursor-pointer ${
-                        oversCount === 0
-                          ? 'bg-[#A3FF12] border-[#A3FF12] text-black'
-                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
-                      }`}
-                    >
+                    <button onClick={() => setOversCount(0)} className={`flex-1 py-2 text-xs font-black rounded-xl border transition cursor-pointer ${oversCount === 0 ? 'bg-sleek-accent border-sleek-accent text-black' : 'bg-sleek-overlay border-sleek-border text-sleek-text'}`}>
                       Custom
                     </button>
                   </div>
-                  {oversCount === 0 && (
-                    <input
-                      type="number"
-                      placeholder="Custom overs count..."
-                      value={customOvers}
-                      onChange={(e) => setCustomOvers(e.target.value)}
-                      className="w-full mt-2 px-3 py-1.5 bg-[#0F1218] text-white border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#A3FF12] text-xs font-mono"
-                    />
-                  )}
+                </div>
+                {oversCount === 0 && (
+                  <div className="w-24">
+                    <input type="number" value={customOvers} onChange={e => setCustomOvers(e.target.value)} placeholder="Overs" className="w-full px-3 py-2 bg-sleek-panel text-sleek-text border border-sleek-border rounded-xl font-mono text-sm focus:ring-1 focus:ring-sleek-accent outline-none" />
+                  </div>
+                )}
+                
+                <div className="flex gap-2 w-full md:w-auto">
+                  <button onClick={() => setShowAttendance(!showAttendance)} className="px-4 py-2 bg-sleek-lightcard hover:bg-sleek-overlay border border-sleek-border rounded-xl text-xs font-black uppercase tracking-wider text-sleek-text transition flex items-center justify-center gap-2 flex-1 md:flex-none h-10 cursor-pointer">
+                    <Users size={16} /> Manage Attendance ({localPlayers.filter(p=>p.available).length})
+                  </button>
+                  <button onClick={() => performAutoDraft(localPlayers, playerStats)} className="px-4 py-2 bg-sleek-accent/10 hover:bg-sleek-accent/20 border border-sleek-accent/30 rounded-xl text-xs font-black uppercase tracking-wider text-sleek-accent transition flex items-center justify-center gap-2 flex-1 md:flex-none h-10 cursor-pointer">
+                    <Shuffle size={16} /> Auto-Draft
+                  </button>
                 </div>
               </div>
 
-              {/* Balanced & Captains Validation Banner */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className={`p-3 rounded-xl border flex items-center justify-between gap-3 text-xs font-semibold ${
-                  isBalanced
-                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    : 'bg-amber-500/10 border-amber-500/20 text-amber-400'
-                }`}>
-                  <div className="flex items-center gap-3">
-                    {isBalanced ? (
-                      <CheckCircle2 size={16} className="shrink-0" />
-                    ) : (
-                      <AlertTriangle size={16} className="shrink-0 animate-bounce" />
-                    )}
-                    <div>
-                      <span className="font-bold block uppercase tracking-wider text-[10px]">Team Balance Check</span>
-                      {isBalanced 
-                        ? `Teams are balanced! (${teamAPlayers.length} vs ${teamBPlayers.length})`
-                        : `Expected ${expectedTeamSize} per team. Current: ${teamAPlayers.length} vs ${teamBPlayers.length}.`
-                      }
+              {/* Attendance Drawer */}
+              <AnimatePresence>
+                {showAttendance && (
+                  <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                    <div className="p-4 bg-sleek-panel border border-sleek-border rounded-2xl mb-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-black uppercase text-sleek-text tracking-widest">Player Availability</span>
+                        <button onClick={() => setShowAttendance(false)} className="text-xs text-sleek-text-muted hover:text-sleek-text font-bold cursor-pointer">Close</button>
+                      </div>
+                      <div className="flex flex-wrap gap-2 max-h-48 overflow-y-auto">
+                        {localPlayers.map(p => (
+                          <button key={p.id} onClick={() => toggleAttendance(p.id)} className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase transition border flex items-center gap-2 cursor-pointer ${p.available ? 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20' : 'bg-rose-500/10 text-rose-500 border-rose-500/20'}`}>
+                            <img src={p.avatar} alt="" className="w-4 h-4 rounded-full" />
+                            {p.name} {p.available ? '✓' : '✗'}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                  {!isBalanced && availableCount >= 2 && (
-                    <button
-                      type="button"
-                      onClick={handleAutoBalanceTeams}
-                      className="px-2.5 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/20 rounded-lg text-[9px] uppercase font-black tracking-wider transition cursor-pointer"
-                    >
-                      Auto-Balance
-                    </button>
-                  )}
-                </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
 
-                <div className={`p-3 rounded-xl border flex items-center gap-3 text-xs font-semibold ${
-                  hasCaptains
-                    ? 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400'
-                    : 'bg-rose-500/10 border-rose-500/20 text-rose-400'
-                }`}>
-                  {hasCaptains ? (
-                    <CheckCircle2 size={16} className="shrink-0" />
+              {/* Double Sided Player Section */}
+              <div className="bg-amber-500/10 border border-amber-500/20 p-3 rounded-2xl flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  {doubleSidedId ? (
+                    <img src={getPlayerAvatar(doubleSidedId)} alt="" className="w-10 h-10 rounded-full border-2 border-amber-500" />
                   ) : (
-                    <AlertTriangle size={16} className="shrink-0" />
+                    <div className="w-10 h-10 rounded-full border-2 border-amber-500/50 border-dashed flex items-center justify-center text-amber-500/50 font-bold">?</div>
                   )}
                   <div>
-                    <span className="font-bold block uppercase tracking-wider text-[10px]">Captains Selection</span>
-                    {hasCaptains
-                      ? 'Both teams have captains assigned!'
-                      : 'Assign one captain for each team to proceed.'
-                    }
+                    <span className="text-xs font-black text-amber-500 uppercase tracking-widest flex items-center gap-1.5"><AlertTriangle size={14}/> Double-Sided Player</span>
+                    <span className="text-sleek-text text-sm font-bold block">{doubleSidedId ? getPlayerName(doubleSidedId) : 'None selected'}</span>
                   </div>
                 </div>
-              </div>
-
-              {/* Double-Sided Player Section (Labeled clearly in separate section) */}
-              <div className="bg-[#11141D] border border-white/5 p-5 rounded-3xl space-y-4 shadow-xl">
-                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <h5 className="text-xs font-black text-amber-400 uppercase tracking-widest flex items-center gap-1.5">
-                      <Users size={14} className="text-amber-400" /> Double-Sided Player Rules
-                    </h5>
-                    <p className="text-[11px] text-white/50 max-w-xl leading-relaxed font-sans">
-                      {isOdd ? (
-                        <span className="text-amber-400/90 font-bold block">
-                          ⚠️ ODD PLAYER COUNT DETECTED ({availableCount} available). Exactly one player must be designated as a Double-Sided Player. The remaining {availableCount - 1} players will be split equally between both teams ({expectedTeamSize} vs {expectedTeamSize}).
-                        </span>
-                      ) : (
-                        <span className="text-emerald-400 font-bold block">
-                          ✓ EVEN PLAYER COUNT DETECTED ({availableCount} available). No Double-Sided Player is required. Players will be split equally between both teams ({expectedTeamSize} vs {expectedTeamSize}).
-                        </span>
-                      )}
-                    </p>
-                  </div>
-
-                  {isOdd && (
-                    <div className="flex items-center gap-2">
-                      <select
-                        value={doubleSidedId || ''}
-                        onChange={(e) => handleSelectDoubleSided(e.target.value || null)}
-                        className="text-xs bg-[#1A1E29] border border-amber-500/20 text-amber-400 px-3 py-2 rounded-xl focus:outline-none font-black uppercase cursor-pointer"
-                      >
-                        <option value="" disabled>-- Select DS Player --</option>
-                        {availableList.map(p => (
-                          <option key={p.id} value={p.id}>{p.name}</option>
-                        ))}
-                      </select>
-
-                      <button
-                        type="button"
-                        onClick={suggestRandomDoubleSided}
-                        className="px-3 py-2 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/25 text-xs font-black uppercase tracking-wider rounded-xl transition cursor-pointer"
-                      >
-                        Suggest Random
-                      </button>
-                    </div>
-                  )}
-                </div>
-
-                {isOdd && doubleSidedId && (
-                  <div className="flex items-center gap-3 p-3 bg-amber-500/5 border border-amber-500/10 rounded-2xl">
-                    <img
-                      src={getPlayerAvatar(doubleSidedId)}
-                      alt=""
-                      className="w-10 h-10 rounded-full bg-white/5 border-2 border-amber-500"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div>
-                      <p className="font-extrabold text-white text-xs uppercase">
-                        {getPlayerName(doubleSidedId)} <span className="text-[10px] bg-amber-500 text-black px-1.5 py-0.5 rounded ml-2 font-black">DOUBLE-SIDED PLAYER (DS)</span>
-                      </p>
-                      <p className="text-[10px] text-white/40 font-mono mt-0.5">
-                        Removed from both teams. Will bat and bowl for both sides in separate scorecard entries.
-                      </p>
-                    </div>
+                {doubleSidedId && (
+                  <div className="flex gap-2">
+                    <button onClick={() => moveToTeam(doubleSidedId, 'A')} className="text-[10px] text-amber-400 hover:text-emerald-400 font-black uppercase px-2 py-1 bg-black/20 rounded-lg cursor-pointer">To A</button>
+                    <button onClick={() => moveToTeam(doubleSidedId, 'B')} className="text-[10px] text-amber-400 hover:text-emerald-400 font-black uppercase px-2 py-1 bg-black/20 rounded-lg cursor-pointer">To B</button>
                   </div>
                 )}
               </div>
 
-              {/* Scorer Instructions / Draft Alert */}
-              <div className="bg-[#A3FF12]/5 border border-[#A3FF12]/15 rounded-2xl p-4 flex items-start gap-3 text-xs text-[#A3FF12] font-semibold">
-                <Users size={16} className="shrink-0 text-[#A3FF12] mt-0.5" />
-                <div className="space-y-1">
-                  <span className="font-black block uppercase tracking-wider text-[10px]">Scorer Instructions: Manual Team Drafting</span>
-                  <p className="text-white/70 font-normal leading-relaxed">
-                    Drag and drop player cards between columns to assign them to teams, or click the quick <strong className="text-[#A3FF12] font-extrabold">+ Team A / + Team B</strong> buttons. If a player is not available today, click <strong className="text-rose-400 font-extrabold">Skip</strong> to exclude them from the match rosters.
-                  </p>
-                </div>
-              </div>
-
-              {/* Three-Column Draft Grid with HTML5 Drag & Drop */}
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+              {/* Smart Draft Columns */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 
-                {/* Column 1: Team A */}
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragOverA(true);
-                  }}
-                  onDragLeave={() => {
-                    setIsDragOverA(false);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDragOverA(false);
-                    const id = e.dataTransfer.getData('text/plain');
-                    if (id) {
-                      moveToTeam(id, 'A');
-                    }
-                  }}
-                  className={`bg-[#14181F] border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 ${
-                    isDragOverA
-                      ? 'border-[#A3FF12] bg-[#A3FF12]/5 shadow-lg shadow-[#A3FF12]/10 scale-[1.01]'
-                      : 'border-white/5'
-                  }`}
-                >
-                  <div className="border-b border-white/5 pb-2 flex items-center justify-between">
-                    <span className="font-black text-[#A3FF12] text-xs uppercase tracking-widest truncate">{teamAName}</span>
-                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white font-mono text-[10px] rounded">
-                      {teamAPlayers.length} Players
-                    </span>
+                {/* Team A */}
+                <div onDragOver={(e) => { e.preventDefault(); setIsDragOverA(true); }} onDragLeave={() => setIsDragOverA(false)} onDrop={(e) => { e.preventDefault(); setIsDragOverA(false); moveToTeam(e.dataTransfer.getData('text/plain'), 'A'); }}
+                  className={`bg-sleek-card border rounded-2xl p-4 flex flex-col gap-3 transition-all ${isDragOverA ? 'border-sleek-accent scale-[1.02]' : 'border-sleek-border'}`}>
+                  <div className="flex items-center justify-between border-b border-sleek-border pb-3">
+                    <div className="flex items-center gap-2 w-full">
+                      <input type="text" value={teamAName} onChange={(e) => setTeamAName(e.target.value)} className="bg-transparent font-black text-sleek-accent text-sm uppercase tracking-widest w-full outline-none focus:border-b focus:border-sleek-accent" />
+                    </div>
+                    <span className="px-2 py-1 bg-sleek-overlay text-sleek-text-muted font-mono text-xs rounded-lg">{teamAPlayers.length}</span>
                   </div>
-
-                  {/* Team A Captain select */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest block">Assign Captain</span>
-                    <select
-                      value={captainA}
-                      onChange={(e) => setCaptainA(e.target.value)}
-                      className="w-full text-xs bg-[#0F1218] border border-white/10 text-white px-2 py-1.5 rounded-lg focus:outline-none font-mono"
-                    >
-                      <option value="">Select Captain</option>
-                      {teamAPlayers.map(id => (
-                        <option key={id} value={id}>{getPlayerName(id)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
-                    {teamAPlayers.length === 0 ? (
-                      <div className="text-center py-8 text-white/20 text-xs uppercase font-extrabold tracking-widest border border-dashed border-white/5 rounded-xl">
-                        Drag players here
-                      </div>
-                    ) : (
-                      teamAPlayers.map(id => (
-                        <div
-                          key={id}
-                          draggable={true}
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData('text/plain', id);
-                            e.dataTransfer.effectAllowed = 'move';
-                          }}
-                          className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-xl text-xs hover:border-white/10 cursor-grab active:cursor-grabbing transition"
-                        >
-                          <div className="flex items-center gap-2">
-                            <img src={getPlayerAvatar(id)} alt="" className="w-5 h-5 rounded-full bg-white/5 border border-white/10" referrerPolicy="no-referrer" />
-                            <span className="font-extrabold text-white">
-                              {getPlayerName(id)}
-                              {captainA === id && <span className="ml-1.5 text-xs text-yellow-400" title="Captain">👑 (C)</span>}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => moveToTeam(id, 'pool')}
-                            className="text-[10px] text-white/50 hover:text-rose-400 font-bold px-1.5 py-0.5 hover:bg-white/5 rounded cursor-pointer"
-                          >
-                            Remove
-                          </button>
+                  <select value={captainA} onChange={(e) => setCaptainA(e.target.value)} className="text-xs bg-sleek-panel border border-sleek-border text-sleek-text px-3 py-2 rounded-xl focus:outline-none focus:border-sleek-accent font-bold uppercase cursor-pointer">
+                    {teamAPlayers.map(id => <option key={id} value={id}>{getPlayerName(id)} (Captain)</option>)}
+                  </select>
+                  <div className="space-y-2 min-h-[150px]">
+                    {teamAPlayers.map(id => (
+                      <div key={id} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; }} className="flex items-center gap-3 p-2 bg-sleek-overlay border border-sleek-border rounded-xl cursor-grab active:cursor-grabbing hover:border-sleek-accent/50">
+                        <img src={getPlayerAvatar(id)} alt="" className="w-8 h-8 rounded-full bg-sleek-panel" />
+                        <span className="font-bold text-sleek-text text-sm truncate flex-1">{getPlayerName(id)}</span>
+                        <div className="flex gap-1">
+                          <button onClick={() => moveToTeam(id, 'DS')} className="text-[10px] text-sleek-text-muted hover:text-amber-400 font-black uppercase px-2 py-1 bg-sleek-panel rounded-lg cursor-pointer" title="Make Double-Sided">DS</button>
+                          <button onClick={() => moveToTeam(id, 'B')} className="text-[10px] text-sleek-text-muted hover:text-emerald-400 font-black uppercase px-2 py-1 bg-sleek-panel rounded-lg cursor-pointer" title="Move to Team B">&rarr;</button>
                         </div>
-                      ))
-                    )}
+                      </div>
+                    ))}
                   </div>
                 </div>
 
-                {/* Column 2: Pool of Available Players */}
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragOverPool(true);
-                  }}
-                  onDragLeave={() => {
-                    setIsDragOverPool(false);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDragOverPool(false);
-                    const id = e.dataTransfer.getData('text/plain');
-                    if (id) {
-                      moveToTeam(id, 'pool');
-                    }
-                  }}
-                  className={`bg-[#14181F] border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 lg:col-span-1 ${
-                    isDragOverPool
-                      ? 'border-white/40 bg-white/5 shadow-lg scale-[1.01]'
-                      : 'border-white/5'
-                  }`}
-                >
-                  <div className="border-b border-white/5 pb-2 flex items-center justify-between">
-                    <span className="font-black text-white text-xs uppercase tracking-widest">Player Pool</span>
-                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white font-mono text-[10px] rounded">
-                      {localPlayers.filter(p => !teamAPlayers.includes(p.id) && !teamBPlayers.includes(p.id) && p.id !== doubleSidedId).length} Left
-                    </span>
+                {/* Team B */}
+                <div onDragOver={(e) => { e.preventDefault(); setIsDragOverB(true); }} onDragLeave={() => setIsDragOverB(false)} onDrop={(e) => { e.preventDefault(); setIsDragOverB(false); moveToTeam(e.dataTransfer.getData('text/plain'), 'B'); }}
+                  className={`bg-sleek-card border rounded-2xl p-4 flex flex-col gap-3 transition-all ${isDragOverB ? 'border-emerald-400 scale-[1.02]' : 'border-sleek-border'}`}>
+                  <div className="flex items-center justify-between border-b border-sleek-border pb-3">
+                    <div className="flex items-center gap-2 w-full">
+                      <input type="text" value={teamBName} onChange={(e) => setTeamBName(e.target.value)} className="bg-transparent font-black text-emerald-400 text-sm uppercase tracking-widest w-full outline-none focus:border-b focus:border-emerald-400" />
+                    </div>
+                    <span className="px-2 py-1 bg-sleek-overlay text-sleek-text-muted font-mono text-xs rounded-lg">{teamBPlayers.length}</span>
                   </div>
-
-                  <div className="space-y-1.5 max-h-[380px] overflow-y-auto pr-1">
-                    {(() => {
-                      const poolPlayers = localPlayers.filter(p => !teamAPlayers.includes(p.id) && !teamBPlayers.includes(p.id) && p.id !== doubleSidedId);
-                      const sortedPoolPlayers = [...poolPlayers].sort((a, b) => {
-                        if (a.available && !b.available) return -1;
-                        if (!a.available && b.available) return 1;
-                        return 0;
-                      });
-
-                      if (sortedPoolPlayers.length === 0) {
-                        return (
-                          <div className="text-center py-8 text-white/20 text-xs uppercase font-extrabold tracking-widest border border-dashed border-white/5 rounded-xl">
-                            All Assigned
-                          </div>
-                        );
-                      }
-
-                      return sortedPoolPlayers.map(p => (
-                        <div
-                          key={p.id}
-                          draggable={p.available}
-                          onDragStart={(e) => {
-                            if (p.available) {
-                              e.dataTransfer.setData('text/plain', p.id);
-                              e.dataTransfer.effectAllowed = 'move';
-                            }
-                          }}
-                          className={`p-2.5 rounded-xl text-xs border transition ${
-                            p.available 
-                              ? 'bg-white/5 border-white/5 hover:border-white/10 cursor-grab active:cursor-grabbing' 
-                              : 'bg-red-500/5 border-red-500/10 opacity-40'
-                          }`}
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <img src={p.avatar} alt="" className="w-6 h-6 rounded-full bg-white/5 border border-white/10" referrerPolicy="no-referrer" />
-                              <div className="min-w-0">
-                                <span className="font-extrabold text-white truncate block">{p.name}</span>
-                                {!p.available && (
-                                  <span className="text-[9px] text-red-400 font-bold uppercase tracking-wider block">Skipped / Unavailable</span>
-                                )}
-                              </div>
-                            </div>
-                            
-                            <button
-                              type="button"
-                              onClick={() => togglePlayerAvailability(p.id)}
-                              className={`px-2 py-0.5 text-[9px] font-black uppercase tracking-wider rounded-lg border transition duration-150 cursor-pointer ${
-                                p.available
-                                  ? 'bg-rose-500/10 text-rose-400 border-rose-500/20 hover:bg-rose-500/20'
-                                  : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20'
-                              }`}
-                              title={p.available ? 'Skip this player' : 'Make player available'}
-                            >
-                              {p.available ? 'Skip' : 'Activate'}
-                            </button>
-                          </div>
-
-                          {p.available && (
-                            <div className="grid grid-cols-2 gap-1 mt-2.5 pt-2 border-t border-white/5">
-                              <button
-                                type="button"
-                                onClick={() => moveToTeam(p.id, 'A')}
-                                className="text-[10px] bg-[#A3FF12]/10 hover:bg-[#A3FF12]/20 text-[#A3FF12] border border-[#A3FF12]/15 py-1 px-1 rounded-lg font-bold uppercase transition text-center cursor-pointer"
-                              >
-                                + Team A
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => moveToTeam(p.id, 'B')}
-                                className="text-[10px] bg-emerald-400/10 hover:bg-emerald-400/20 text-emerald-400 border border-emerald-400/15 py-1 px-1 rounded-lg font-bold uppercase transition text-center cursor-pointer"
-                              >
-                                + Team B
-                              </button>
-                            </div>
-                          )}
+                  <select value={captainB} onChange={(e) => setCaptainB(e.target.value)} className="text-xs bg-sleek-panel border border-sleek-border text-sleek-text px-3 py-2 rounded-xl focus:outline-none focus:border-emerald-400 font-bold uppercase cursor-pointer">
+                    {teamBPlayers.map(id => <option key={id} value={id}>{getPlayerName(id)} (Captain)</option>)}
+                  </select>
+                  <div className="space-y-2 min-h-[150px]">
+                    {teamBPlayers.map(id => (
+                      <div key={id} draggable onDragStart={(e) => { e.dataTransfer.setData('text/plain', id); e.dataTransfer.effectAllowed = 'move'; }} className="flex items-center gap-3 p-2 bg-sleek-overlay border border-sleek-border rounded-xl cursor-grab active:cursor-grabbing hover:border-emerald-400/50">
+                        <div className="flex gap-1">
+                          <button onClick={() => moveToTeam(id, 'A')} className="text-[10px] text-sleek-text-muted hover:text-sleek-accent font-black uppercase px-2 py-1 bg-sleek-panel rounded-lg cursor-pointer" title="Move to Team A">&larr;</button>
+                          <button onClick={() => moveToTeam(id, 'DS')} className="text-[10px] text-sleek-text-muted hover:text-amber-400 font-black uppercase px-2 py-1 bg-sleek-panel rounded-lg cursor-pointer" title="Make Double-Sided">DS</button>
                         </div>
-                      ));
-                    })()}
-                  </div>
-                </div>
-
-                {/* Column 3: Team B */}
-                <div
-                  onDragOver={(e) => {
-                    e.preventDefault();
-                    setIsDragOverB(true);
-                  }}
-                  onDragLeave={() => {
-                    setIsDragOverB(false);
-                  }}
-                  onDrop={(e) => {
-                    e.preventDefault();
-                    setIsDragOverB(false);
-                    const id = e.dataTransfer.getData('text/plain');
-                    if (id) {
-                      moveToTeam(id, 'B');
-                    }
-                  }}
-                  className={`bg-[#14181F] border rounded-2xl p-4 flex flex-col gap-3 transition-all duration-200 ${
-                    isDragOverB
-                      ? 'border-emerald-400 bg-emerald-400/5 shadow-lg shadow-emerald-400/10 scale-[1.01]'
-                      : 'border-white/5'
-                  }`}
-                >
-                  <div className="border-b border-white/5 pb-2 flex items-center justify-between">
-                    <span className="font-black text-emerald-400 text-xs uppercase tracking-widest truncate">{teamBName}</span>
-                    <span className="px-2 py-0.5 bg-white/5 border border-white/10 text-white font-mono text-[10px] rounded">
-                      {teamBPlayers.length} Players
-                    </span>
-                  </div>
-
-                  {/* Team B Captain select */}
-                  <div className="space-y-1">
-                    <span className="text-[10px] text-white/40 font-bold uppercase tracking-widest block">Assign Captain</span>
-                    <select
-                      value={captainB}
-                      onChange={(e) => setCaptainB(e.target.value)}
-                      className="w-full text-xs bg-[#0F1218] border border-white/10 text-white px-2 py-1.5 rounded-lg focus:outline-none font-mono"
-                    >
-                      <option value="">Select Captain</option>
-                      {teamBPlayers.map(id => (
-                        <option key={id} value={id}>{getPlayerName(id)}</option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="space-y-1.5 max-h-[300px] overflow-y-auto pr-1">
-                    {teamBPlayers.length === 0 ? (
-                      <div className="text-center py-8 text-white/20 text-xs uppercase font-extrabold tracking-widest border border-dashed border-white/5 rounded-xl">
-                        Drag players here
+                        <span className="font-bold text-sleek-text text-sm truncate flex-1 text-right">{getPlayerName(id)}</span>
+                        <img src={getPlayerAvatar(id)} alt="" className="w-8 h-8 rounded-full bg-sleek-panel" />
                       </div>
-                    ) : (
-                      teamBPlayers.map(id => (
-                        <div
-                          key={id}
-                          draggable={true}
-                          onDragStart={(e) => {
-                            e.dataTransfer.setData('text/plain', id);
-                            e.dataTransfer.effectAllowed = 'move';
-                          }}
-                          className="flex items-center justify-between p-2 bg-white/5 border border-white/5 rounded-xl text-xs hover:border-white/10 cursor-grab active:cursor-grabbing transition"
-                        >
-                          <div className="flex items-center gap-2">
-                            <img src={getPlayerAvatar(id)} alt="" className="w-5 h-5 rounded-full bg-white/5 border border-white/10" referrerPolicy="no-referrer" />
-                            <span className="font-extrabold text-white">
-                              {getPlayerName(id)}
-                              {captainB === id && <span className="ml-1.5 text-xs text-yellow-400" title="Captain">👑 (C)</span>}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => moveToTeam(id, 'pool')}
-                            className="text-[10px] text-white/50 hover:text-rose-400 font-bold px-1.5 py-0.5 hover:bg-white/5 rounded cursor-pointer"
-                          >
-                            Remove
-                          </button>
-                        </div>
-                      ))
-                    )}
+                    ))}
                   </div>
                 </div>
 
               </div>
 
               {/* Action Bar */}
-              <div className="flex justify-end pt-4 border-t border-white/5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!stepTeamsValid) {
-                      alert('Please balance both teams and assign a captain for each team before proceeding.');
-                      return;
-                    }
-                    setStep('toss');
-                  }}
-                  disabled={!stepTeamsValid}
-                  className={`px-6 py-3 font-black uppercase text-xs tracking-widest rounded-xl transition flex items-center gap-1.5 ${
-                    stepTeamsValid
-                      ? 'bg-[#A3FF12] hover:bg-[#A3FF12]/80 text-black cursor-pointer'
-                      : 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'
-                  }`}
-                >
-                  Configure Toss <ArrowRight size={14} />
+              <div className="flex justify-between items-center pt-4 border-t border-sleek-border">
+                <span className={`text-xs font-bold uppercase ${isBalanced ? 'text-emerald-500' : 'text-amber-500'}`}>{isBalanced ? '✓ Teams Balanced' : '⚠️ Teams Unbalanced'}</span>
+                <button onClick={() => setStep('toss')} disabled={!isBalanced || !captainA || !captainB} className="px-6 py-3 bg-sleek-accent text-black hover:bg-sleek-accent/90 disabled:bg-sleek-overlay disabled:text-sleek-text-muted font-black uppercase text-xs tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer">
+                  Confirm Lineups <ArrowRight size={16} />
                 </button>
               </div>
 
             </div>
           )}
 
-          {/* STEP 2: ANIMATED TOSS SCREEN */}
           {step === 'toss' && (
-            <div className="space-y-8 max-w-lg mx-auto py-4">
+            <div className="max-w-2xl mx-auto space-y-6">
               
-              <div className="text-center space-y-2">
-                <h4 className="font-extrabold text-white text-base uppercase tracking-wider">The Coin Toss</h4>
-                <p className="text-xs text-white/50">Displaying captains. Choose who will call the flip.</p>
+              <div className="text-center space-y-2 pb-4">
+                <Coins className="mx-auto text-yellow-500" size={48} />
+                <h4 className="font-extrabold text-sleek-text text-xl uppercase tracking-wider">Toss Details</h4>
+                <p className="text-sm text-sleek-text-muted">Enter physical coin toss results, or let the app flip it.</p>
               </div>
 
-              {/* Captain Comparison cards */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="bg-sleek-card border border-sleek-border p-6 rounded-3xl space-y-8">
                 
-                {/* Team A Captain card */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (tossCompleted || isFlipping) return;
-                    setTossCaller('teamA');
-                    setTossCall(null);
-                  }}
-                  className={`p-4 rounded-2xl border text-center transition flex flex-col items-center gap-3 cursor-pointer ${
-                    tossCaller === 'teamA'
-                      ? 'bg-[#A3FF12]/5 border-[#A3FF12]/30 ring-1 ring-[#A3FF12]/20'
-                      : 'bg-white/5 border-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <img src={getPlayerAvatar(captainA)} alt="" className="w-14 h-14 rounded-full bg-white/5 border-2 border-[#A3FF12]" referrerPolicy="no-referrer" />
-                  <div>
-                    <span className="text-[10px] bg-[#A3FF12]/10 text-[#A3FF12] border border-[#A3FF12]/25 px-2 py-0.5 rounded-full font-black uppercase tracking-wider block mb-1">
+                {/* Winner Toggle */}
+                <div className="space-y-3">
+                  <span className="text-xs font-black text-sleek-text-muted uppercase tracking-widest block text-center">Who won the toss?</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => setTossWinner('teamA')} className={`py-4 px-4 rounded-2xl border-2 font-black uppercase tracking-wider transition cursor-pointer ${tossWinner === 'teamA' ? 'bg-sleek-accent/10 border-sleek-accent text-sleek-accent shadow-[0_0_15px_rgba(0,229,255,0.2)]' : 'bg-sleek-overlay border-transparent text-sleek-text hover:bg-sleek-lightcard'}`}>
                       {teamAName}
-                    </span>
-                    <span className="font-extrabold text-white text-sm block">
-                      {getPlayerName(captainA)}
-                    </span>
-                    <span className="text-[10px] text-white/40 font-mono block">Captain (C)</span>
-                  </div>
-                  {tossCaller === 'teamA' && <span className="text-xs text-[#A3FF12] font-black uppercase mt-1">✓ Caller</span>}
-                </button>
-
-                {/* Team B Captain card */}
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (tossCompleted || isFlipping) return;
-                    setTossCaller('teamB');
-                    setTossCall(null);
-                  }}
-                  className={`p-4 rounded-2xl border text-center transition flex flex-col items-center gap-3 cursor-pointer ${
-                    tossCaller === 'teamB'
-                      ? 'bg-emerald-500/5 border-emerald-500/30 ring-1 ring-emerald-500/20'
-                      : 'bg-white/5 border-white/5 hover:bg-white/10'
-                  }`}
-                >
-                  <img src={getPlayerAvatar(captainB)} alt="" className="w-14 h-14 rounded-full bg-white/5 border-2 border-emerald-400" referrerPolicy="no-referrer" />
-                  <div>
-                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 border border-emerald-500/25 px-2 py-0.5 rounded-full font-black uppercase tracking-wider block mb-1">
+                    </button>
+                    <button onClick={() => setTossWinner('teamB')} className={`py-4 px-4 rounded-2xl border-2 font-black uppercase tracking-wider transition cursor-pointer ${tossWinner === 'teamB' ? 'bg-emerald-500/10 border-emerald-500 text-emerald-500 shadow-[0_0_15px_rgba(16,185,129,0.2)]' : 'bg-sleek-overlay border-transparent text-sleek-text hover:bg-sleek-lightcard'}`}>
                       {teamBName}
-                    </span>
-                    <span className="font-extrabold text-white text-sm block">
-                      {getPlayerName(captainB)}
-                    </span>
-                    <span className="text-[10px] text-white/40 font-mono block">Captain (C)</span>
+                    </button>
                   </div>
-                  {tossCaller === 'teamB' && <span className="text-xs text-emerald-400 font-black uppercase mt-1">✓ Caller</span>}
-                </button>
+                </div>
 
+                {/* Decision Toggle */}
+                <div className="space-y-3">
+                  <span className="text-xs font-black text-sleek-text-muted uppercase tracking-widest block text-center">What did they elect to do?</span>
+                  <div className="grid grid-cols-2 gap-3">
+                    <button onClick={() => setTossDecision('bat')} className={`py-4 px-4 rounded-2xl border-2 flex items-center justify-center gap-3 transition cursor-pointer ${tossDecision === 'bat' ? 'bg-yellow-500/10 border-yellow-500 text-yellow-500 shadow-[0_0_15px_rgba(234,179,8,0.2)]' : 'bg-sleek-overlay border-transparent text-sleek-text hover:bg-sleek-lightcard'}`}>
+                      <span className="text-2xl">🏸</span>
+                      <span className="font-black uppercase tracking-wider text-sm">Bat</span>
+                    </button>
+                    <button onClick={() => setTossDecision('bowl')} className={`py-4 px-4 rounded-2xl border-2 flex items-center justify-center gap-3 transition cursor-pointer ${tossDecision === 'bowl' ? 'bg-rose-500/10 border-rose-500 text-rose-500 shadow-[0_0_15px_rgba(244,63,94,0.2)]' : 'bg-sleek-overlay border-transparent text-sleek-text hover:bg-sleek-lightcard'}`}>
+                      <span className="text-2xl">🥎</span>
+                      <span className="font-black uppercase tracking-wider text-sm">Bowl</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Digital Toss Overide */}
+                <div className="pt-6 border-t border-sleek-border flex justify-center">
+                   <button onClick={handleDigitalToss} className="flex items-center gap-2 px-4 py-2 bg-sleek-panel border border-sleek-border hover:border-sleek-text rounded-xl text-xs font-black text-sleek-text uppercase tracking-wider transition cursor-pointer">
+                     <Shuffle size={14} /> Let App Flip For Us
+                   </button>
+                </div>
               </div>
 
-              {/* Toss Call Selector (Heads or Tails) */}
-              {tossCaller && !tossCompleted && !isFlipping && (
-                <div className="bg-white/5 border border-white/5 p-4 rounded-2xl text-center space-y-3 animate-in fade-in zoom-in-95 duration-200">
-                  <span className="text-xs text-white font-extrabold uppercase tracking-widest block">
-                    {tossCaller === 'teamA' ? getPlayerName(captainA) : getPlayerName(captainB)}'s Toss Call
-                  </span>
-                  <div className="grid grid-cols-2 gap-3 max-w-xs mx-auto">
-                    <button
-                      type="button"
-                      onClick={() => setTossCall('heads')}
-                      className={`py-2 px-4 rounded-xl border font-black uppercase text-xs tracking-wider transition cursor-pointer ${
-                        tossCall === 'heads'
-                          ? 'bg-[#A3FF12] border-[#A3FF12] text-black'
-                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
-                      }`}
-                    >
-                      🪙 Heads
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setTossCall('tails')}
-                      className={`py-2 px-4 rounded-xl border font-black uppercase text-xs tracking-wider transition cursor-pointer ${
-                        tossCall === 'tails'
-                          ? 'bg-[#A3FF12] border-[#A3FF12] text-black'
-                          : 'bg-white/5 border-white/10 text-white hover:bg-white/10'
-                      }`}
-                    >
-                      🪙 Tails
-                    </button>
-                  </div>
-                </div>
-              )}
-
-              {/* Coin flip animation arena */}
-              {tossCall && (
-                <div className="flex flex-col items-center justify-center space-y-4">
-                  
-                  {/* Coin Div with standard rotation and sleek bounce */}
-                  <motion.div
-                    animate={isFlipping ? {
-                      rotateY: [0, 360, 720, 1080, 1440, 1800],
-                      scale: [1, 1.25, 1.35, 1.25, 1],
-                      y: [0, -100, -120, -60, 0]
-                    } : {}}
-                    transition={{ duration: 1.5, ease: "easeInOut" }}
-                    className={`w-24 h-24 rounded-full border-4 flex items-center justify-center font-black uppercase text-lg select-none shadow-2xl relative ${
-                      isFlipping 
-                        ? 'border-yellow-400 bg-yellow-500/20 text-yellow-300' 
-                        : tossCompleted 
-                          ? 'border-emerald-400 bg-emerald-500/20 text-[#A3FF12]' 
-                          : 'border-white/20 bg-white/5 text-white/50'
-                    }`}
-                  >
-                    {isFlipping ? 'SPIN' : tossResult ? tossResult.toUpperCase() : 'COIN'}
-                  </motion.div>
-
-                  {!isFlipping && !tossCompleted && (
-                    <button
-                      type="button"
-                      onClick={handleFlipCoin}
-                      className="px-6 py-2.5 bg-[#A3FF12] text-black hover:bg-[#A3FF12]/80 font-black text-xs uppercase tracking-widest rounded-xl transition cursor-pointer"
-                    >
-                      Flip Coin Now
-                    </button>
-                  )}
-
-                  {isFlipping && (
-                    <span className="text-xs font-bold text-yellow-400 animate-pulse uppercase tracking-widest">
-                      Spanning in mid-air...
-                    </span>
-                  )}
-
-                </div>
-              )}
-
-              {/* Toss Result Outcome Panel */}
-              {tossCompleted && tossWinner && (
-                <div className="bg-[#14181F] border border-white/5 p-5 rounded-2xl text-center space-y-3 animate-in fade-in zoom-in-95 duration-300">
-                  <Trophy className="mx-auto text-yellow-400" size={32} />
-                  <div className="space-y-1">
-                    <h5 className="font-extrabold text-white text-base">
-                      {tossWinner === 'teamA' ? teamAName : teamBName} won the toss!
-                    </h5>
-                    <p className="text-xs text-white/60">
-                      Caller specified <span className="text-[#A3FF12] font-mono uppercase">"{tossCall}"</span>, Coin landed on <span className="text-[#A3FF12] font-mono uppercase">"{tossResult}"</span>.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Navigation Action Buttons */}
-              <div className="flex items-center justify-between border-t border-white/5 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setStep('teams')}
-                  className="px-4 py-2 hover:bg-white/5 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer"
-                >
+              {/* Action Bar */}
+              <div className="flex justify-between items-center pt-2">
+                <button onClick={() => setStep('draft')} className="px-5 py-2.5 hover:bg-sleek-overlay text-sleek-text font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer">
                   Back
                 </button>
-
-                {tossCompleted && (
-                  <button
-                    type="button"
-                    onClick={() => setStep('decision')}
-                    className="px-5 py-2.5 bg-[#A3FF12] text-black hover:bg-[#A3FF12]/80 font-black text-xs uppercase tracking-widest rounded-xl transition cursor-pointer flex items-center gap-1.5"
-                  >
-                    Select Bat or Bowl <ArrowRight size={14} />
-                  </button>
-                )}
-              </div>
-
-            </div>
-          )}
-
-          {/* STEP 3: BAT OR BOWL DECISION SCREEN */}
-          {step === 'decision' && (
-            <div className="space-y-6 max-w-lg mx-auto py-4 text-center">
-              
-              <div className="space-y-2">
-                <Trophy className="mx-auto text-yellow-400 animate-bounce" size={40} />
-                <h4 className="font-black text-white text-base uppercase tracking-wider">Bat or Bowl Choice</h4>
-                <p className="text-xs text-white/50">
-                  Toss winner: <strong>{tossWinner === 'teamA' ? teamAName : teamBName}</strong>
-                </p>
-                <p className="text-[11px] text-white/40">
-                  Captain {tossWinner === 'teamA' ? getPlayerName(captainA) : getPlayerName(captainB)} should select the match choice first.
-                </p>
-              </div>
-
-              {/* Big Selectable Button Grid */}
-              <div className="grid grid-cols-2 gap-4 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setTossDecision('bat')}
-                  className={`p-6 border rounded-2xl flex flex-col items-center gap-3 transition cursor-pointer ${
-                    tossDecision === 'bat'
-                      ? 'bg-[#A3FF12]/10 border-[#A3FF12] text-[#A3FF12] ring-1 ring-[#A3FF12]/20'
-                      : 'bg-white/5 border-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                  }`}
-                >
-                  <span className="text-3xl">🏸</span>
-                  <span className="font-extrabold text-sm uppercase tracking-wider">Elect to Bat</span>
-                  <span className="text-[10px] text-white/40">Will bat first in Innings 1</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTossDecision('bowl')}
-                  className={`p-6 border rounded-2xl flex flex-col items-center gap-3 transition cursor-pointer ${
-                    tossDecision === 'bowl'
-                      ? 'bg-emerald-500/10 border-emerald-400 text-emerald-400 ring-1 ring-emerald-500/20'
-                      : 'bg-white/5 border-white/5 hover:bg-white/10 text-white/70 hover:text-white'
-                  }`}
-                >
-                  <span className="text-3xl">🥎</span>
-                  <span className="font-extrabold text-sm uppercase tracking-wider">Elect to Bowl</span>
-                  <span className="text-[10px] text-white/40">Will bowl first in Innings 1</span>
-                </button>
-              </div>
-
-              {/* Automatic Configuration Preview summary */}
-              {tossDecision && (
-                <div className="bg-white/5 p-4 rounded-xl border border-white/5 text-xs text-white/80 space-y-1 text-left">
-                  <span className="font-bold text-white/50 uppercase tracking-widest block text-[9px] mb-1">Preview Lineup Configuration</span>
-                  <div>• <strong>Innings 1 Batting:</strong> {
-                    tossWinner === 'teamA' 
-                      ? (tossDecision === 'bat' ? teamAName : teamBName)
-                      : (tossDecision === 'bat' ? teamBName : teamAName)
-                  }</div>
-                  <div>• <strong>Innings 1 Bowling:</strong> {
-                    tossWinner === 'teamA' 
-                      ? (tossDecision === 'bat' ? teamBName : teamAName)
-                      : (tossDecision === 'bat' ? teamAName : teamBName)
-                  }</div>
-                  <div>• <strong>Overs format:</strong> {activeOvers} Overs match format</div>
-                </div>
-              )}
-
-              {/* Actions Footer */}
-              <div className="flex items-center justify-between border-t border-white/5 pt-6">
-                <button
-                  type="button"
-                  onClick={() => setStep('toss')}
-                  className="px-4 py-2 hover:bg-white/5 text-white font-bold text-xs uppercase tracking-wider rounded-xl transition cursor-pointer"
-                >
-                  Back
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleFinalizeMatch}
-                  disabled={!tossDecision || saving}
-                  className={`px-6 py-3 font-black text-xs uppercase tracking-widest rounded-xl transition flex items-center gap-2 ${
-                    tossDecision && !saving
-                      ? 'bg-[#A3FF12] text-black hover:bg-[#A3FF12]/80 cursor-pointer'
-                      : 'bg-white/5 border border-white/10 text-white/30 cursor-not-allowed'
-                  }`}
-                >
-                  {saving ? (
-                    'Initializing Match...'
-                  ) : (
-                    <>
-                      Start Live Match Scoring <Play size={12} fill="currentColor" />
-                    </>
-                  )}
+                <button onClick={handleFinalizeMatch} disabled={!tossWinner || !tossDecision || saving} className="px-6 py-3 bg-sleek-accent text-black hover:bg-sleek-accent/90 disabled:bg-sleek-overlay disabled:text-sleek-text-muted font-black uppercase text-xs tracking-widest rounded-xl transition flex items-center gap-2 cursor-pointer">
+                  {saving ? 'Initializing...' : 'Start Match Scoring'}
                 </button>
               </div>
 
             </div>
           )}
-
         </div>
-
       </div>
     </div>
   );

@@ -53,24 +53,27 @@ service cloud.firestore {
     match /players/{playerId} {
       allow read: if true;
       allow create, update: if isValidId(playerId) 
-        && isValidPlayer(incoming());
-      allow delete: if true;
+        && isValidPlayer(incoming())
+        && isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     // Collection: player_stats
     match /player_stats/{playerId} {
       allow read: if true;
       allow create, update: if isValidId(playerId)
-        && isValidPlayerStats(incoming());
-      allow delete: if true;
+        && isValidPlayerStats(incoming())
+        && isSignedIn();
+      allow delete: if isSignedIn();
     }
 
     // Collection: matches
     match /matches/{matchId} {
       allow read: if true;
       allow create, update: if isValidId(matchId)
-        && isValidMatch(incoming());
-      allow delete: if true;
+        && isValidMatch(incoming())
+        && isSignedIn();
+      allow delete: if isSignedIn();
     }
   }
 }

@@ -117,15 +117,15 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
   return (
     <div className="space-y-6">
       {/* Overview & Quick Seeding */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0F1218] border border-white/5 p-5 rounded-2xl shadow-md">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-sleek-panel border border-sleek-border p-5 rounded-2xl shadow-md">
         <div className="flex items-center gap-3">
-          <div className="p-3 bg-white/5 text-[#A3FF12] rounded-xl">
+          <div className="p-3 bg-sleek-overlay text-sleek-accent rounded-xl">
             <Users size={20} />
           </div>
           <div>
-            <h3 className="font-extrabold text-[#A3FF12] uppercase tracking-wider text-sm">Community Squad</h3>
-            <p className="text-xs text-white/50 mt-0.5">
-              {players.length} Players Registered &bull; <strong className="text-[#A3FF12] font-black">{availableCount} Available</strong> for next match
+            <h3 className="font-extrabold text-sleek-accent uppercase tracking-wider text-sm">Community Squad</h3>
+            <p className="text-xs text-sleek-text-muted mt-0.5">
+              {players.length} Players Registered &bull; <strong className="text-sleek-accent font-black">{availableCount} Available</strong> for next match
             </p>
           </div>
         </div>
@@ -134,7 +134,7 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
           <button
             onClick={handleSeedData}
             disabled={saving}
-            className="w-full sm:w-auto px-4 py-2.5 bg-white/5 border border-white/10 text-white hover:bg-[#A3FF12] hover:text-black hover:border-transparent text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2.5 bg-sleek-overlay border border-sleek-border text-sleek-text hover:bg-sleek-accent hover:text-black hover:border-transparent text-xs font-black uppercase tracking-wider rounded-xl shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <Sparkles size={14} />
             {saving ? 'Seeding...' : 'Seed 25 Demo Players'}
@@ -143,8 +143,8 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
       </div>
 
       {/* Add New Player Form */}
-      <form onSubmit={handleAddPlayer} className="bg-[#14181F] p-5 border border-white/5 rounded-2xl shadow-xl space-y-4">
-        <h4 className="font-extrabold text-white text-sm uppercase tracking-wider">Register New Player</h4>
+      <form onSubmit={handleAddPlayer} className="bg-sleek-card p-5 border border-sleek-border rounded-2xl shadow-sleek-xl space-y-4">
+        <h4 className="font-extrabold text-sleek-text text-sm uppercase tracking-wider">Register New Player</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
           <input
             type="text"
@@ -153,7 +153,7 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
             onChange={(e) => setNewPlayerName(e.target.value)}
             required
             disabled={saving}
-            className="px-4 py-2.5 bg-white/5 text-white placeholder-white/30 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#A3FF12] text-sm font-mono"
+            className="px-4 py-2.5 bg-sleek-overlay text-sleek-text placeholder-white/30 border border-sleek-border rounded-xl focus:outline-none focus:ring-1 focus:ring-sleek-accent text-sm font-mono"
           />
           <input
             type="tel"
@@ -161,13 +161,13 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
             value={newPlayerMobile}
             onChange={(e) => setNewPlayerMobile(e.target.value)}
             disabled={saving}
-            className="px-4 py-2.5 bg-white/5 text-white placeholder-white/30 border border-white/10 rounded-xl focus:outline-none focus:ring-1 focus:ring-[#A3FF12] text-sm font-mono"
+            className="px-4 py-2.5 bg-sleek-overlay text-sleek-text placeholder-white/30 border border-sleek-border rounded-xl focus:outline-none focus:ring-1 focus:ring-sleek-accent text-sm font-mono"
           />
         </div>
         <button
           type="submit"
           disabled={saving || !newPlayerName.trim()}
-          className="w-full py-2.5 bg-[#A3FF12] text-black font-black uppercase tracking-wider rounded-xl hover:bg-[#A3FF12]/80 transition flex items-center justify-center gap-1.5 text-xs cursor-pointer"
+          className="w-full py-2.5 bg-sleek-accent text-black font-black uppercase tracking-wider rounded-xl hover:bg-sleek-accent/80 transition flex items-center justify-center gap-1.5 text-xs cursor-pointer"
         >
           <Plus size={16} />
           {saving ? 'Registering...' : 'Register Player'}
@@ -175,12 +175,12 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
       </form>
 
       {/* Player List */}
-      <div className="bg-[#14181F] border border-white/5 rounded-2xl shadow-xl overflow-hidden">
-        <div className="p-4 border-b border-white/5 flex items-center justify-between bg-[#0F1218]">
-          <h4 className="font-extrabold text-[#A3FF12] uppercase tracking-wider text-sm">Player Roster</h4>
+      <div className="bg-sleek-card border border-sleek-border rounded-2xl shadow-sleek-xl overflow-hidden">
+        <div className="p-4 border-b border-sleek-border flex items-center justify-between bg-sleek-panel">
+          <h4 className="font-extrabold text-sleek-accent uppercase tracking-wider text-sm">Player Roster</h4>
           <button 
             onClick={onRefresh}
-            className="p-1.5 text-white/40 hover:text-white rounded-lg transition"
+            className="p-1.5 text-sleek-text-muted hover:text-sleek-text rounded-lg transition"
             title="Refresh list"
           >
             <RefreshCw size={16} className={loading ? 'animate-spin' : ''} />
@@ -188,26 +188,26 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
         </div>
 
         {loading ? (
-          <div className="p-8 text-center text-white/40 text-sm">Loading players list...</div>
+          <div className="p-8 text-center text-sleek-text-muted text-sm">Loading players list...</div>
         ) : players.length === 0 ? (
-          <div className="p-12 text-center text-white/40 space-y-3">
+          <div className="p-12 text-center text-sleek-text-muted space-y-3">
             <p className="text-sm font-semibold">No players registered yet.</p>
-            <p className="text-xs text-white/40">Add players manually above, or click the "Seed" button to populate some local superstars instantly!</p>
+            <p className="text-xs text-sleek-text-muted">Add players manually above, or click the "Seed" button to populate some local superstars instantly!</p>
           </div>
         ) : (
           <div className="divide-y divide-white/5 max-h-[450px] overflow-y-auto">
             {players.map((player) => (
-              <div key={player.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition">
+              <div key={player.id} className="p-4 flex items-center justify-between hover:bg-sleek-overlay transition">
                 <div className="flex items-center gap-3 min-w-0">
                   <img
                     src={player.avatar || `https://api.dicebear.com/7.x/bottts/svg?seed=${player.name}`}
                     alt={player.name}
-                    className="w-9 h-9 rounded-xl bg-white/5 border border-white/10 p-1 flex-shrink-0"
+                    className="w-9 h-9 rounded-xl bg-sleek-overlay border border-sleek-border p-1 flex-shrink-0"
                     referrerPolicy="no-referrer"
                   />
                   <div className="min-w-0">
-                    <p className="font-extrabold text-white text-sm truncate">{player.name}</p>
-                    <div className="flex items-center gap-2 text-[11px] text-white/40 font-mono">
+                    <p className="font-extrabold text-sleek-text text-sm truncate">{player.name}</p>
+                    <div className="flex items-center gap-2 text-xs text-sleek-text-muted font-mono">
                       {player.mobile && (
                         <span className="flex items-center gap-0.5">
                           <Smartphone size={10} /> {player.mobile}
@@ -222,20 +222,20 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
                 <div className="flex items-center gap-3">
                   <button
                     onClick={() => handleToggleAvailability(player)}
-                    className={`px-3 py-1.5 rounded-xl text-[11px] font-black uppercase tracking-wider flex items-center gap-1 border transition cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-wider flex items-center gap-1 border transition cursor-pointer ${
                       player.available
-                        ? 'bg-[#A3FF12]/10 border-[#A3FF12]/20 text-[#A3FF12] hover:bg-[#A3FF12]/20'
-                        : 'bg-white/5 border-white/10 text-white/30 hover:bg-white/10'
+                        ? 'bg-sleek-accent/10 border-sleek-accent/20 text-sleek-accent hover:bg-sleek-accent/20'
+                        : 'bg-sleek-overlay border-sleek-border text-sleek-text-muted hover:bg-sleek-overlay-hover'
                     }`}
                   >
                     {player.available ? (
                       <>
-                        <CheckCircle2 size={12} className="text-[#A3FF12]" />
+                        <CheckCircle2 size={12} className="text-sleek-accent" />
                         Available
                       </>
                     ) : (
                       <>
-                        <XCircle size={12} className="text-white/30" />
+                        <XCircle size={12} className="text-sleek-text-muted" />
                         Unavailable
                       </>
                     )}
@@ -243,7 +243,7 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
 
                   <button
                     onClick={() => setDeleteConfirmId(player.id)}
-                    className="p-1.5 text-white/20 hover:text-rose-500 rounded-lg transition hover:bg-rose-500/10 cursor-pointer"
+                    className="p-1.5 text-sleek-text/20 hover:text-rose-500 rounded-lg transition hover:bg-rose-500/10 cursor-pointer"
                     title="Delete player"
                   >
                     <Trash2 size={14} />
@@ -257,14 +257,14 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
 
       {deleteConfirmId && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-[#14181F] border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-5 shadow-2xl text-center">
+          <div className="bg-sleek-card border border-sleek-border rounded-3xl p-6 max-w-sm w-full space-y-5 shadow-sleek-2xl text-center">
             <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
               <Trash2 size={24} />
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-extrabold text-white text-base uppercase tracking-wider">Delete Player?</h4>
-              <p className="text-xs text-white/60 leading-relaxed">
+              <h4 className="font-extrabold text-sleek-text text-base uppercase tracking-wider">Delete Player?</h4>
+              <p className="text-xs text-sleek-text-muted leading-relaxed">
                 Are you sure you want to delete <strong>{players.find(p => p.id === deleteConfirmId)?.name || 'this player'}</strong>? This will permanently remove their profile and all historic stats.
               </p>
             </div>
@@ -273,7 +273,7 @@ export default function PlayerManager({ players, playerStats, loading, onRefresh
               <button
                 type="button"
                 onClick={() => setDeleteConfirmId(null)}
-                className="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer"
+                className="py-2.5 bg-sleek-overlay hover:bg-sleek-overlay-hover border border-sleek-border text-sleek-text text-xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer"
               >
                 Cancel
               </button>

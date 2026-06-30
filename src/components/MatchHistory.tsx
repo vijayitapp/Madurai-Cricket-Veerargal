@@ -159,6 +159,7 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
         {
           id: 'b1',
           timestamp: new Date().toISOString(),
+          innings: 2 as (1 | 2),
           overIndex: 5,
           ballIndex: 4,
           batterId: tB[0],
@@ -473,10 +474,10 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-[#0F1218] border border-white/5 p-5 rounded-2xl shadow-md">
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 bg-sleek-panel border border-sleek-border p-5 rounded-2xl shadow-md">
         <div>
-          <h3 className="font-extrabold text-[#A3FF12] text-sm uppercase tracking-wider">Match Archives</h3>
-          <p className="text-xs text-white/50">
+          <h3 className="font-extrabold text-sleek-accent text-sm uppercase tracking-wider">Match Archives</h3>
+          <p className="text-xs text-sleek-text-muted">
             {archivedMatches.length} historical matches recorded on Madurai Cricket Veeragal.
           </p>
         </div>
@@ -485,7 +486,7 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
           <button
             onClick={handleSeedCompletedMatches}
             disabled={loadingDemo}
-            className="w-full sm:w-auto px-4 py-2 bg-white/5 hover:bg-[#A3FF12] hover:text-black hover:border-transparent text-white text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 border border-white/10 transition cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 bg-sleek-overlay hover:bg-sleek-accent hover:text-black hover:border-transparent text-sleek-text text-xs font-black uppercase tracking-wider rounded-xl flex items-center justify-center gap-1.5 border border-sleek-border transition cursor-pointer"
           >
             <Sparkles size={14} />
             {loadingDemo ? 'Seeding...' : 'Seed Mock Match Scorecard'}
@@ -494,10 +495,10 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
       </div>
 
       {archivedMatches.length === 0 ? (
-        <div className="bg-[#14181F] border border-white/5 p-12 rounded-3xl text-center space-y-3">
-          <Calendar className="mx-auto text-white/20" size={32} />
-          <p className="text-sm text-white font-extrabold uppercase tracking-widest">No Match History Yet</p>
-          <p className="text-xs text-white/40 max-w-sm mx-auto">Complete live scoring for an active match to see its full record here, or seed a mock completed scorecard above.</p>
+        <div className="bg-sleek-card border border-sleek-border p-12 rounded-3xl text-center space-y-3">
+          <Calendar className="mx-auto text-sleek-text/20" size={32} />
+          <p className="text-sm text-sleek-text font-extrabold uppercase tracking-widest">No Match History Yet</p>
+          <p className="text-xs text-sleek-text-muted max-w-sm mx-auto">Complete live scoring for an active match to see its full record here, or seed a mock completed scorecard above.</p>
         </div>
       ) : (
         <div className="space-y-4">
@@ -509,22 +510,22 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
             const secondTeamName = match.battingFirst === 'teamA' ? match.teamB.name : match.teamA.name;
 
             return (
-              <div key={match.id} className="bg-[#14181F] border border-white/5 rounded-2xl shadow-xl overflow-hidden">
+              <div key={match.id} className="bg-sleek-card border border-sleek-border rounded-2xl shadow-sleek-xl overflow-hidden">
                 {/* Match Summary Header */}
                 <div
                   onClick={() => handleToggleExpand(match.id)}
-                  className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:bg-white/5 transition"
+                  className="p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 cursor-pointer hover:bg-sleek-overlay transition"
                 >
                   <div className="space-y-1.5 min-w-0">
                     <span className={`inline-block px-2.5 py-1 text-[9px] font-black tracking-widest uppercase rounded ${
                       match.status === 'aborted'
                         ? 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-                        : 'bg-white/5 text-[#A3FF12]'
+                        : 'bg-sleek-overlay text-sleek-accent'
                     }`}>
                       {match.overs} OVERS FORMAT {match.status === 'aborted' && '• ABORTED'}
                     </span>
-                    <h4 className="font-extrabold text-white text-sm flex items-center gap-1.5 truncate">
-                      {firstTeamName} <ArrowRight size={12} className="text-[#A3FF12]" /> {secondTeamName}
+                    <h4 className="font-extrabold text-sleek-text text-sm flex items-center gap-1.5 truncate">
+                      {firstTeamName} <ArrowRight size={12} className="text-sleek-accent" /> {secondTeamName}
                     </h4>
                     {match.status === 'aborted' ? (
                       <p className="text-xs text-amber-400 font-black uppercase tracking-wider flex items-center gap-1">
@@ -532,39 +533,39 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
                         Match Aborted / Incomplete
                       </p>
                     ) : (
-                      <p className="text-xs text-[#A3FF12] font-black uppercase tracking-wider flex items-center gap-1">
+                      <p className="text-xs text-sleek-accent font-black uppercase tracking-wider flex items-center gap-1">
                         <Trophy size={12} />
                         Winner: {match.winner === 'draw' ? 'Draw Match' : match.winner === 'teamA' ? match.teamA.name : match.teamB.name}
                       </p>
                     )}
                   </div>
 
-                  <div className="flex items-center gap-4 w-full sm:w-auto justify-between border-t sm:border-t-0 pt-3 sm:pt-0 border-white/5">
+                  <div className="flex items-center gap-4 w-full sm:w-auto justify-between border-t sm:border-t-0 pt-3 sm:pt-0 border-sleek-border">
                     <div className="text-left sm:text-right">
-                      <p className="text-[10px] font-black text-white/30 uppercase tracking-widest">Date</p>
-                      <p className="text-xs text-white font-mono mt-0.5">
+                      <p className="text-xs font-black text-sleek-text-muted uppercase tracking-widest">Date</p>
+                      <p className="text-xs text-sleek-text font-mono mt-0.5">
                         {new Date(match.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                       </p>
                     </div>
-                    {isExpanded ? <ChevronUp size={16} className="text-white/40" /> : <ChevronDown size={16} className="text-white/40" />}
+                    {isExpanded ? <ChevronUp size={16} className="text-sleek-text-muted" /> : <ChevronDown size={16} className="text-sleek-text-muted" />}
                   </div>
                 </div>
 
                 {/* Expanded Full Detailed Scorecard & Timeline */}
                 {isExpanded && (
-                  <div className="p-5 border-t border-white/5 bg-[#0F1218]/40 space-y-6">
+                  <div className="p-5 border-t border-sleek-border bg-sleek-panel/40 space-y-6">
                     {/* Share / Export / Admin Action Bar */}
-                    <div className="flex flex-wrap gap-2 justify-end border-b border-white/5 pb-4">
+                    <div className="flex flex-wrap gap-2 justify-end border-b border-sleek-border pb-4">
                       <button
                         onClick={() => handleShareSummary(match)}
                         disabled={sharing}
-                        className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-[#A3FF12]/20 hover:text-[#A3FF12] text-white text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+                        className="px-3 py-1.5 bg-sleek-overlay border border-sleek-border hover:bg-sleek-accent/20 hover:text-sleek-accent text-sleek-text text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition cursor-pointer"
                       >
                         <Share2 size={12} /> Share Summary
                       </button>
                       <button
                         onClick={() => handlePrintScorecard(match.id)}
-                        className="px-3 py-1.5 bg-white/5 border border-white/10 hover:bg-white/10 text-white/80 hover:text-white text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+                        className="px-3 py-1.5 bg-sleek-overlay border border-sleek-border hover:bg-sleek-overlay-hover text-sleek-text-muted hover:text-sleek-text text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition cursor-pointer"
                       >
                         <Printer size={12} /> Export Scorecard
                       </button>
@@ -572,7 +573,7 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
                       {isAdminMode && match.status === 'aborted' && (
                         <button
                           onClick={() => setResumeConfirmMatch(match)}
-                          className="px-3 py-1.5 bg-[#A3FF12] text-black hover:bg-[#A3FF12]/80 text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition cursor-pointer"
+                          className="px-3 py-1.5 bg-sleek-accent text-black hover:bg-sleek-accent/80 text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition cursor-pointer"
                         >
                           <Play size={12} /> Resume Match
                         </button>
@@ -591,20 +592,20 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
                     {/* Team Innings details */}
                     <div className="space-y-6">
                       {/* Innings 1 Scorecard */}
-                      <div className="bg-[#14181F] border border-white/5 p-4 rounded-2xl space-y-3 shadow-md">
-                        <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                          <span className="text-xs font-black text-[#A3FF12] uppercase tracking-wider">{firstTeamName} Innings (1st)</span>
-                          <span className="text-xs font-black text-white font-mono">{scoreFirst.runs}/{scoreFirst.wickets} <span className="text-[10px] text-white/40 font-normal font-sans">({match.overs} Ov)</span></span>
+                      <div className="bg-sleek-card border border-sleek-border p-4 rounded-2xl space-y-3 shadow-md">
+                        <div className="flex justify-between items-center border-b border-sleek-border pb-2">
+                          <span className="text-xs font-black text-sleek-accent uppercase tracking-wider">{firstTeamName} Innings (1st)</span>
+                          <span className="text-xs font-black text-sleek-text font-mono">{scoreFirst.runs}/{scoreFirst.wickets} <span className="text-xs text-sleek-text-muted font-normal font-sans">({match.overs} Ov)</span></span>
                         </div>
                         
                         {/* Batting performances */}
                         <div className="space-y-1.5">
-                          <span className="text-[10px] font-black text-white/30 uppercase tracking-widest block">Batting Summary</span>
+                          <span className="text-xs font-black text-sleek-text-muted uppercase tracking-widest block">Batting Summary</span>
                           {scoreFirst.batting.map(b => (
-                            <div key={b.playerId} className="flex justify-between items-center text-xs p-2 bg-white/5 rounded-lg border border-white/5">
-                              <span className="font-bold text-white/90">{b.name}</span>
-                              <span className="font-bold text-white/80 font-mono">
-                                {b.runs} <span className="text-[10px] text-white/40 font-normal">({b.balls}b, {b.fours}x4, {b.sixes}x6)</span>
+                            <div key={b.playerId} className="flex justify-between items-center text-xs p-2 bg-sleek-overlay rounded-lg border border-sleek-border">
+                              <span className="font-bold text-sleek-text/90">{b.name}</span>
+                              <span className="font-bold text-sleek-text-muted font-mono">
+                                {b.runs} <span className="text-xs text-sleek-text-muted font-normal">({b.balls}b, {b.fours}x4, {b.sixes}x6)</span>
                                 {b.dismissed && <span className="text-[9px] text-red-400 font-black uppercase tracking-wider ml-2 bg-red-400/10 px-1 py-0.5 rounded">Out</span>}
                               </span>
                             </div>
@@ -613,20 +614,20 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
                       </div>
 
                       {/* Innings 2 Scorecard */}
-                      <div className="bg-[#14181F] border border-white/5 p-4 rounded-2xl space-y-3 shadow-md">
-                        <div className="flex justify-between items-center border-b border-white/5 pb-2">
-                          <span className="text-xs font-black text-[#A3FF12] uppercase tracking-wider">{secondTeamName} Innings (2nd)</span>
-                          <span className="text-xs font-black text-white font-mono">{scoreSecond.runs}/{scoreSecond.wickets} <span className="text-[10px] text-white/40 font-normal font-sans">({match.overs} Ov)</span></span>
+                      <div className="bg-sleek-card border border-sleek-border p-4 rounded-2xl space-y-3 shadow-md">
+                        <div className="flex justify-between items-center border-b border-sleek-border pb-2">
+                          <span className="text-xs font-black text-sleek-accent uppercase tracking-wider">{secondTeamName} Innings (2nd)</span>
+                          <span className="text-xs font-black text-sleek-text font-mono">{scoreSecond.runs}/{scoreSecond.wickets} <span className="text-xs text-sleek-text-muted font-normal font-sans">({match.overs} Ov)</span></span>
                         </div>
                         
                         {/* Batting performances */}
                         <div className="space-y-1.5">
-                          <span className="text-[10px] font-black text-white/30 uppercase tracking-widest block">Batting Summary</span>
+                          <span className="text-xs font-black text-sleek-text-muted uppercase tracking-widest block">Batting Summary</span>
                           {scoreSecond.batting.map(b => (
-                            <div key={b.playerId} className="flex justify-between items-center text-xs p-2 bg-white/5 rounded-lg border border-white/5">
-                              <span className="font-bold text-white/90">{b.name}</span>
-                              <span className="font-bold text-white/80 font-mono">
-                                {b.runs} <span className="text-[10px] text-white/40 font-normal">({b.balls}b, {b.fours}x4, {b.sixes}x6)</span>
+                            <div key={b.playerId} className="flex justify-between items-center text-xs p-2 bg-sleek-overlay rounded-lg border border-sleek-border">
+                              <span className="font-bold text-sleek-text/90">{b.name}</span>
+                              <span className="font-bold text-sleek-text-muted font-mono">
+                                {b.runs} <span className="text-xs text-sleek-text-muted font-normal">({b.balls}b, {b.fours}x4, {b.sixes}x6)</span>
                                 {b.dismissed && <span className="text-[9px] text-red-400 font-black uppercase tracking-wider ml-2 bg-red-400/10 px-1 py-0.5 rounded">Out</span>}
                               </span>
                             </div>
@@ -637,15 +638,15 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
 
                     {/* Timeline Log */}
                     {match.timeline && match.timeline.length > 0 && (
-                      <div className="bg-[#14181F] border border-white/5 p-4 rounded-2xl space-y-3 shadow-md">
-                        <span className="text-xs font-black text-white uppercase tracking-wider flex items-center gap-1">
-                          <Zap size={14} className="text-[#A3FF12]" /> Match Timeline & Critical Events
+                      <div className="bg-sleek-card border border-sleek-border p-4 rounded-2xl space-y-3 shadow-md">
+                        <span className="text-xs font-black text-sleek-text uppercase tracking-wider flex items-center gap-1">
+                          <Zap size={14} className="text-sleek-accent" /> Match Timeline & Critical Events
                         </span>
                         <div className="divide-y divide-white/5 max-h-[200px] overflow-y-auto pr-1 space-y-2.5">
                           {match.timeline.map((event, idx) => (
-                            <div key={idx} className="pt-2 text-xs text-white/70 space-y-1">
-                              <span className="text-[10px] font-black text-[#A3FF12] font-mono uppercase tracking-widest">Over {event.overIndex}.{event.ballIndex}</span>
-                              <p className="font-medium text-white/80">{event.description}</p>
+                            <div key={idx} className="pt-2 text-xs text-sleek-text-muted space-y-1">
+                              <span className="text-xs font-black text-sleek-accent font-mono uppercase tracking-widest">Over {event.overIndex}.{event.ballIndex}</span>
+                              <p className="font-medium text-sleek-text-muted">{event.description}</p>
                             </div>
                           ))}
                         </div>
@@ -662,14 +663,14 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
       {/* Modal: Custom Resume Confirmation Modal */}
       {resumeConfirmMatch && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-[#14181F] border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-5 shadow-2xl text-center">
+          <div className="bg-sleek-card border border-sleek-border rounded-3xl p-6 max-w-sm w-full space-y-5 shadow-sleek-2xl text-center">
             <div className="w-12 h-12 rounded-full bg-emerald-500/10 text-emerald-400 flex items-center justify-center mx-auto">
               <Play size={24} />
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-extrabold text-white text-base uppercase tracking-wider">Resume Scoring?</h4>
-              <p className="text-xs text-white/60 leading-relaxed">
+              <h4 className="font-extrabold text-sleek-text text-base uppercase tracking-wider">Resume Scoring?</h4>
+              <p className="text-xs text-sleek-text-muted leading-relaxed">
                 Do you want to resume scoring this match: <strong>{resumeConfirmMatch.teamA.name} vs {resumeConfirmMatch.teamB.name}</strong>?
               </p>
             </div>
@@ -678,14 +679,14 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
               <button
                 type="button"
                 onClick={() => setResumeConfirmMatch(null)}
-                className="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-white text-xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer"
+                className="py-2.5 bg-sleek-overlay hover:bg-sleek-overlay-hover border border-sleek-border text-sleek-text text-xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer"
               >
                 Cancel
               </button>
               <button
                 type="button"
                 onClick={() => handleResumeMatch(resumeConfirmMatch)}
-                className="py-2.5 bg-[#A3FF12] text-black text-xs font-black uppercase tracking-widest rounded-xl hover:bg-[#A3FF12]/80 transition cursor-pointer"
+                className="py-2.5 bg-sleek-accent text-black text-xs font-black uppercase tracking-widest rounded-xl hover:bg-sleek-accent/80 transition cursor-pointer"
               >
                 Resume
               </button>
@@ -697,14 +698,14 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
       {/* Modal: Custom Delete Match Confirmation Modal */}
       {deleteConfirmMatchId && (
         <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200">
-          <div className="bg-[#14181F] border border-white/10 rounded-3xl p-6 max-w-sm w-full space-y-5 shadow-2xl text-center">
+          <div className="bg-sleek-card border border-sleek-border rounded-3xl p-6 max-w-sm w-full space-y-5 shadow-sleek-2xl text-center">
             <div className="w-12 h-12 rounded-full bg-rose-500/10 text-rose-500 flex items-center justify-center mx-auto">
               <AlertTriangle size={24} />
             </div>
             
             <div className="space-y-2">
-              <h4 className="font-extrabold text-white text-base uppercase tracking-wider">Delete Match?</h4>
-              <p className="text-xs text-white/60 leading-relaxed">
+              <h4 className="font-extrabold text-sleek-text text-base uppercase tracking-wider">Delete Match?</h4>
+              <p className="text-xs text-sleek-text-muted leading-relaxed">
                 Are you absolutely sure you want to permanently delete this match? This action cannot be undone.
               </p>
             </div>
@@ -713,7 +714,7 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
               <button
                 type="button"
                 onClick={() => setDeleteConfirmMatchId(null)}
-                className="py-2.5 bg-white/5 hover:bg-white/10 border border-white/10 text-[#E0E0E0] text-xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer"
+                className="py-2.5 bg-sleek-overlay hover:bg-sleek-overlay-hover border border-sleek-border text-[#E0E0E0] text-xs font-black uppercase tracking-widest rounded-xl transition cursor-pointer"
               >
                 Cancel
               </button>
