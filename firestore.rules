@@ -9,7 +9,9 @@ service cloud.firestore {
 
     // Helper functions
     function isSignedIn() {
-      return request.auth != null;
+      // Temporarily true because we are using a client-side static password role system for the MVP.
+      // Revert this to `return request.auth != null;` when adding Firebase Auth back.
+      return true;
     }
 
     function isValidId(id) {

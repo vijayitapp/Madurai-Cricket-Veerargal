@@ -9,10 +9,11 @@ interface MatchHistoryProps {
   players: Player[];
   onRefresh: () => void;
   isAdminMode?: boolean;
+  canDelete?: boolean;
   onResumeMatch?: (matchId: string) => void;
 }
 
-export default function MatchHistory({ matches, players, onRefresh, isAdminMode = false, onResumeMatch }: MatchHistoryProps) {
+export default function MatchHistory({ matches, players, onRefresh, isAdminMode = false, canDelete = false, onResumeMatch }: MatchHistoryProps) {
   const [expandedMatchId, setExpandedMatchId] = useState<string | null>(null);
   const [sharing, setSharing] = useState(false);
   const [loadingDemo, setLoadingDemo] = useState(false);
@@ -579,7 +580,7 @@ export default function MatchHistory({ matches, players, onRefresh, isAdminMode 
                         </button>
                       )}
 
-                      {isAdminMode && match.status !== 'completed' && (
+                      {canDelete && (
                         <button
                           onClick={() => setDeleteConfirmMatchId(match.id)}
                           className="px-3 py-1.5 bg-rose-500/10 border border-rose-500/20 text-rose-400 hover:bg-rose-500/20 text-xs font-black uppercase tracking-wider rounded-xl flex items-center gap-1.5 transition cursor-pointer"

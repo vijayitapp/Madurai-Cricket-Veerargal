@@ -272,6 +272,7 @@ export default function App() {
             players={players}
             onRefresh={forceRefresh}
             isAdminMode={isAdminMode}
+            canDelete={role === 'admin'}
             onResumeMatch={(matchId) => {
               setActiveTab('scoring');
             }}
