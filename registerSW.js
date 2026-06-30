@@ -1,0 +1,1 @@
+if('serviceWorker' in navigator) {window.addEventListener('load', () => {navigator.serviceWorker.register('/Madurai-Cricket-Veerargal/sw.js', { scope: '/Madurai-Cricket-Veerargal/' })})}
